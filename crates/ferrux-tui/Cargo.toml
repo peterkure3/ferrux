@@ -1,0 +1,15 @@
+[package]
+name = "ferrux-tui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+crossterm = "0.29.0"
+directories = "6.0.0"
+ferrux-core = { version = "0.1.0", path = "../ferrux-core" }
+ferrux-ipc = { version = "0.1.0", path = "../ferrux-ipc" }
+ferrux-term = { version = "0.1.0", path = "../ferrux-term" }
+ratatui = "0.30.2"
+serde = { version = "1.0.229", features = ["derive"] }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "net", "io-util", "macros", "sync", "time"] }
+toml = "1.1.3"

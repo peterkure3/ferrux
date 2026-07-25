@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/ferrux-core",
+    "crates/ferrux-pty",
+    "crates/ferrux-term",
+    "crates/ferrux-ipc",
+    "crates/ferrux-daemon",
+    "crates/ferrux-tui",
+    "crates/ferrux-notify",
+    "crates/ferrux-agent-detect",
+    "crates/ferrux-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"

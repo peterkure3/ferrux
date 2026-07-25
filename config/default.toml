@@ -1,0 +1,5 @@
+[daemon]
+pipe_name = "\\\\.\\pipe\\ferrux-daemon"
+
+[shell]
+default = "cmd.exe"

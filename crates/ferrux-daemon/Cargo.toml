@@ -1,0 +1,16 @@
+[package]
+name = "ferrux-daemon"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+ferrux-agent-detect = { version = "0.1.0", path = "../ferrux-agent-detect" }
+ferrux-core = { version = "0.1.0", path = "../ferrux-core" }
+ferrux-ipc = { version = "0.1.0", path = "../ferrux-ipc" }
+ferrux-notify = { version = "0.1.0", path = "../ferrux-notify" }
+ferrux-pty = { version = "0.1.0", path = "../ferrux-pty" }
+ferrux-term = { version = "0.1.0", path = "../ferrux-term" }
+portable-pty = "0.9.0"
+serde_json = "1.0.151"
+sysinfo = "0.38.4"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "net", "io-util", "sync", "macros", "time"] }

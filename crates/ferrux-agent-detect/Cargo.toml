@@ -1,0 +1,8 @@
+[package]
+name = "ferrux-agent-detect"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+ferrux-core = { version = "0.1.0", path = "../ferrux-core" }
+sysinfo = "0.38.4"

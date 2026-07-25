@@ -1,0 +1,12 @@
+[package]
+name = "ferrux-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+clap = { version = "4.6.4", features = ["derive"] }
+crossterm = "0.29.0"
+ferrux-core = { version = "0.1.0", path = "../ferrux-core" }
+ferrux-ipc = { version = "0.1.0", path = "../ferrux-ipc" }
+ferrux-tui = { version = "0.1.0", path = "../ferrux-tui" }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "net", "io-util", "macros", "io-std", "process", "time"] }

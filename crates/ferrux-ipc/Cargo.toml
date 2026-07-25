@@ -1,0 +1,10 @@
+[package]
+name = "ferrux-ipc"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+ferrux-core = { version = "0.1.0", path = "../ferrux-core" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "net", "io-util", "sync", "macros"] }

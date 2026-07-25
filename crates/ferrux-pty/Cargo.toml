@@ -1,0 +1,9 @@
+[package]
+name = "ferrux-pty"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = "1.0.104"
+ferrux-core = { version = "0.1.0", path = "../ferrux-core" }
+portable-pty = "0.9.0"
