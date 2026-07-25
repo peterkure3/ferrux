@@ -68,7 +68,11 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
     let (input_tx, mut input_rx) = mpsc::unbounded_channel::<KeyEvent>();
     std::thread::spawn(move || loop {
         match event::read() {
-            Ok(Event::Key(key)) => {
+            // Windows reports both key-down and key-up events (unlike
+            // Unix ttys); key-up must never reach the prefix-key state
+            // machine or it clears `awaiting_prefix` right after Ctrl+B
+            // sets it, before the next real keypress arrives.
+            Ok(Event::Key(key)) if key.kind != crossterm::event::KeyEventKind::Release => {
                 if input_tx.send(key).is_err() {
                     break;
                 }
@@ -203,7 +207,11 @@ pub async fn run(name: String) -> io::Result<()> {
     let (input_tx, mut input_rx) = mpsc::unbounded_channel::<KeyEvent>();
     std::thread::spawn(move || loop {
         match event::read() {
-            Ok(Event::Key(key)) => {
+            // Windows reports both key-down and key-up events (unlike
+            // Unix ttys); key-up must never reach the prefix-key state
+            // machine or it clears `awaiting_prefix` right after Ctrl+B
+            // sets it, before the next real keypress arrives.
+            Ok(Event::Key(key)) if key.kind != crossterm::event::KeyEventKind::Release => {
                 if input_tx.send(key).is_err() {
                     break;
                 }

@@ -20,11 +20,12 @@ pub enum Action {
 /// Translates a crossterm key event into an `Action`.
 ///
 /// `awaiting_prefix` selects which key language is active: right after
-/// `Ctrl+B` (`EnterPrefix`), the next key is a workspace command (split,
-/// focus, close, save); otherwise `Ctrl+B` itself enters that mode,
-/// `Ctrl+Q` detaches, and everything else with an obvious byte sequence
-/// (printable chars, arrows, enter/tab/backspace/esc, other Ctrl+letter
-/// combos) is forwarded to the focused pane as-is.
+/// `Ctrl+B` (`EnterPrefix`), the next key is a workspace command — `v`
+/// split vertical, `h` split horizontal, `o` focus-next, `x` close, `s`
+/// save; otherwise `Ctrl+B` itself enters that mode, `Ctrl+Q` detaches,
+/// and everything else with an obvious byte sequence (printable chars,
+/// arrows, enter/tab/backspace/esc, other Ctrl+letter combos) is
+/// forwarded to the focused pane as-is.
 pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
     if event.kind == KeyEventKind::Release {
         return None;
@@ -32,8 +33,8 @@ pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
 
     if awaiting_prefix {
         return match event.code {
-            KeyCode::Char('%') => Some(Action::SplitVertical),
-            KeyCode::Char('"') => Some(Action::SplitHorizontal),
+            KeyCode::Char('v') => Some(Action::SplitVertical),
+            KeyCode::Char('h') => Some(Action::SplitHorizontal),
             KeyCode::Char('o') => Some(Action::FocusNext),
             KeyCode::Char('x') => Some(Action::ClosePane),
             KeyCode::Char('s') => Some(Action::SaveWorkspace),

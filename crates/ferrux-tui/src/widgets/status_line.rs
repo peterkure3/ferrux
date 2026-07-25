@@ -3,8 +3,8 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
 
 const BINDINGS: &[(&str, &str)] = &[
-    ("^B %", "split-v"),
-    ("^B \"", "split-h"),
+    ("^B v", "split-v"),
+    ("^B h", "split-h"),
     ("^B o", "focus"),
     ("^B x", "close"),
     ("^B s", "save"),
