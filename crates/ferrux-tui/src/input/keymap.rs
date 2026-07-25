@@ -21,10 +21,11 @@ pub enum Action {
 ///
 /// `awaiting_prefix` selects which key language is active: right after
 /// `Ctrl+B` (`EnterPrefix`), the next key is a workspace command — `v`
-/// split vertical, `h` split horizontal, `o` focus-next, `x` close, `s`
-/// save; otherwise `Ctrl+B` itself enters that mode, `Ctrl+Q` detaches,
-/// and everything else with an obvious byte sequence (printable chars,
-/// arrows, enter/tab/backspace/esc, other Ctrl+letter combos) is
+/// split vertical, `h` split horizontal, `x` close, `s` save; otherwise
+/// `Ctrl+B` itself enters that mode, `Ctrl+Q` detaches, `Ctrl+O` cycles
+/// focus directly (no prefix, since it's used often enough to want it
+/// fast), and everything else with an obvious byte sequence (printable
+/// chars, arrows, enter/tab/backspace/esc, other Ctrl+letter combos) is
 /// forwarded to the focused pane as-is.
 pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
     if event.kind == KeyEventKind::Release {
@@ -35,7 +36,6 @@ pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
         return match event.code {
             KeyCode::Char('v') => Some(Action::SplitVertical),
             KeyCode::Char('h') => Some(Action::SplitHorizontal),
-            KeyCode::Char('o') => Some(Action::FocusNext),
             KeyCode::Char('x') => Some(Action::ClosePane),
             KeyCode::Char('s') => Some(Action::SaveWorkspace),
             // Unrecognized prefix combo: swallow it rather than leaking a
@@ -49,6 +49,9 @@ pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
     }
     if event.code == KeyCode::Char('q') && event.modifiers.contains(KeyModifiers::CONTROL) {
         return Some(Action::Detach);
+    }
+    if event.code == KeyCode::Char('o') && event.modifiers.contains(KeyModifiers::CONTROL) {
+        return Some(Action::FocusNext);
     }
 
     let bytes = match event.code {

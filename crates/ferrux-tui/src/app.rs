@@ -137,9 +137,9 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
 }
 
 /// Opens (creating if it doesn't exist) the named workspace as a full
-/// multi-pane session: split-tree layout, sidebar, tmux-style `Ctrl+B`
-/// prefix keybindings (`%`/`"` split, `o` focus-next, `x` close, `s`
-/// save), and TOML persistence under `~/.ferrux/sessions/`.
+/// multi-pane session: split-tree layout, sidebar, `Ctrl+O` to cycle
+/// focus, tmux-style `Ctrl+B` prefix keybindings (`v`/`h` split, `x`
+/// close, `s` save), and TOML persistence under `~/.ferrux/sessions/`.
 pub async fn run(name: String) -> io::Result<()> {
     let store = TomlSessionStore::new()?;
     let mut workspace = store.load(&name).unwrap_or_else(|_| Workspace::new(name));
