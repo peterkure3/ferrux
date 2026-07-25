@@ -3,6 +3,10 @@ name = "ferrux-cli"
 version.workspace = true
 edition.workspace = true
 
+[[bin]]
+name = "ferrux"
+path = "src/main.rs"
+
 [dependencies]
 clap = { version = "4.6.4", features = ["derive"] }
 crossterm = "0.29.0"
