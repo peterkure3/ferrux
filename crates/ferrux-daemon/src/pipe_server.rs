@@ -17,8 +17,8 @@ pub async fn handle_connection(mut stream: NamedPipeServer, supervisor: Arc<Supe
         };
 
         match request {
-            Request::SpawnPane { shell, cols, rows } => {
-                let response = match supervisor.spawn_pane(&shell, cols, rows) {
+            Request::SpawnPane { shell, cols, rows, cwd } => {
+                let response = match supervisor.spawn_pane(&shell, cols, rows, cwd) {
                     Ok(id) => Response::PaneSpawned { id },
                     Err(e) => Response::Error {
                         message: e.to_string(),

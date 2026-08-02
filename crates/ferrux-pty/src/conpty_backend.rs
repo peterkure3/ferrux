@@ -29,7 +29,7 @@ impl ConPtyBackend {
 impl PtyBackend for ConPtyBackend {
     type Handle = PtyHandle;
 
-    fn spawn(&self, cmd: &str, size: PtySize) -> io::Result<Self::Handle> {
+    fn spawn(&self, cmd: &str, size: PtySize, cwd: Option<&str>) -> io::Result<Self::Handle> {
         let pty_system = native_pty_system();
         let pair = pty_system
             .openpty(PortablePtySize {
@@ -40,7 +40,10 @@ impl PtyBackend for ConPtyBackend {
             })
             .map_err(to_io_error)?;
 
-        let cmd_builder = CommandBuilder::new(cmd);
+        let mut cmd_builder = CommandBuilder::new(cmd);
+        if let Some(cwd) = cwd {
+            cmd_builder.cwd(cwd);
+        }
         let child = pair.slave.spawn_command(cmd_builder).map_err(to_io_error)?;
         // Slave end is only needed to spawn the child; drop it so EOF
         // propagates correctly once the child exits.

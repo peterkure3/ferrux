@@ -22,7 +22,12 @@ pub async fn connect_with_retry() -> io::Result<NamedPipeClient> {
     Err(last_err.unwrap())
 }
 
-pub async fn spawn_pane(shell: &str, cols: u16, rows: u16) -> io::Result<u64> {
+pub async fn spawn_pane(
+    shell: &str,
+    cols: u16,
+    rows: u16,
+    cwd: Option<String>,
+) -> io::Result<u64> {
     let mut client = connect_with_retry().await?;
     write_message(
         &mut client,
@@ -30,6 +35,7 @@ pub async fn spawn_pane(shell: &str, cols: u16, rows: u16) -> io::Result<u64> {
             shell: shell.to_string(),
             cols,
             rows,
+            cwd,
         },
     )
     .await?;

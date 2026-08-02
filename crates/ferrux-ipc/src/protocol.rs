@@ -7,7 +7,7 @@ pub const PIPE_NAME: &str = r"\\.\pipe\ferrux-daemon";
 
 /// Bumped whenever `Request`/`Response` change shape. The daemon and CLI
 /// must agree on this to talk to each other.
-pub const PROTOCOL_VERSION: u32 = 1;
+pub const PROTOCOL_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaneInfo {
@@ -22,6 +22,9 @@ pub enum Request {
         shell: String,
         cols: u16,
         rows: u16,
+        /// Directory the pane's shell should start in. `None` falls back
+        /// to the daemon process's own working directory.
+        cwd: Option<String>,
     },
     ListPanes,
     KillPane {

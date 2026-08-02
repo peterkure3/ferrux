@@ -53,8 +53,18 @@ fn load_manifest(supervisor: &Supervisor) {
         }
     };
 
+    let cwd = std::env::current_dir()
+        .ok()
+        .map(|p| p.to_string_lossy().into_owned());
+
     for pane in manifest.panes {
-        match supervisor.spawn_pane_with_restart(&pane.shell, pane.cols, pane.rows, pane.restart) {
+        match supervisor.spawn_pane_with_restart(
+            &pane.shell,
+            pane.cols,
+            pane.rows,
+            pane.restart,
+            cwd.clone(),
+        ) {
             Ok(id) => println!("{MANIFEST_FILE}: spawned pane {id} ({})", pane.shell),
             Err(e) => eprintln!("{MANIFEST_FILE}: failed to spawn {}: {e}", pane.shell),
         }

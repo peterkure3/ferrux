@@ -8,7 +8,7 @@ pub struct PtySize {
 pub trait PtyBackend {
     type Handle;
 
-    fn spawn(&self, cmd: &str, size: PtySize) -> io::Result<Self::Handle>;
+    fn spawn(&self, cmd: &str, size: PtySize, cwd: Option<&str>) -> io::Result<Self::Handle>;
     fn resize(&self, handle: &Self::Handle, size: PtySize) -> io::Result<()>;
     fn kill(&self, handle: &Self::Handle) -> io::Result<()>;
 }

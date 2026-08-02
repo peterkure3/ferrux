@@ -141,6 +141,12 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
 /// focus, tmux-style `Ctrl+B` prefix keybindings (`v`/`h` split, `x`
 /// close, `s` save), and TOML persistence under `~/.ferrux/sessions/`.
 pub async fn run(name: String) -> io::Result<()> {
+    // Panes should open in whatever directory the user ran `ferrux open`
+    // from, not the daemon's (possibly long-stale) working directory.
+    let cwd = std::env::current_dir()
+        .ok()
+        .map(|p| p.to_string_lossy().into_owned());
+
     let store = TomlSessionStore::new()?;
     let mut workspace = store.load(&name).unwrap_or_else(|_| Workspace::new(name));
 
@@ -160,7 +166,7 @@ pub async fn run(name: String) -> io::Result<()> {
         let mut id_map: HashMap<PaneId, PaneId> = HashMap::new();
         for old_id in split_tree::leaves(&old_root) {
             let shell = workspace.shell_for(old_id).unwrap_or(DEFAULT_SHELL).to_string();
-            let new_id = daemon_client::spawn_pane(&shell, 80, 24).await?;
+            let new_id = daemon_client::spawn_pane(&shell, 80, 24, cwd.clone()).await?;
             id_map.insert(old_id, PaneId(new_id));
         }
         let new_panes = id_map
@@ -173,7 +179,7 @@ pub async fn run(name: String) -> io::Result<()> {
         workspace.root = Some(remap_ids(&old_root, &id_map));
         workspace.panes = new_panes;
     } else {
-        let new_id = daemon_client::spawn_pane(DEFAULT_SHELL, 80, 24).await?;
+        let new_id = daemon_client::spawn_pane(DEFAULT_SHELL, 80, 24, cwd.clone()).await?;
         workspace.root = Some(SplitNode::Leaf(PaneId(new_id)));
         workspace.panes = vec![PaneRecord {
             id: PaneId(new_id),
@@ -246,6 +252,7 @@ pub async fn run(name: String) -> io::Result<()> {
                         if let Err(e) = do_split(
                             &mut workspace, SplitDirection::Vertical, main_area,
                             &mut sessions, &mut last_sizes, &mut focused, redraw_tx.clone(),
+                            cwd.clone(),
                         ).await {
                             break 'outer Err(e);
                         }
@@ -254,6 +261,7 @@ pub async fn run(name: String) -> io::Result<()> {
                         if let Err(e) = do_split(
                             &mut workspace, SplitDirection::Horizontal, main_area,
                             &mut sessions, &mut last_sizes, &mut focused, redraw_tx.clone(),
+                            cwd.clone(),
                         ).await {
                             break 'outer Err(e);
                         }
@@ -354,11 +362,12 @@ async fn do_split(
     last_sizes: &mut HashMap<PaneId, (u16, u16)>,
     focused: &mut Option<PaneId>,
     redraw_tx: mpsc::UnboundedSender<()>,
+    cwd: Option<String>,
 ) -> io::Result<()> {
     let Some(target) = *focused else { return Ok(()) };
     let Some(root) = workspace.root.clone() else { return Ok(()) };
     let shell = workspace.shell_for(target).unwrap_or(DEFAULT_SHELL).to_string();
-    let new_daemon_id = daemon_client::spawn_pane(&shell, 80, 24).await?;
+    let new_daemon_id = daemon_client::spawn_pane(&shell, 80, 24, cwd).await?;
     let new_id = PaneId(new_daemon_id);
 
     let Some(new_root) = split_tree::split_leaf(&root, target, new_id, direction, 50) else {

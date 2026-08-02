@@ -54,6 +54,7 @@ fn take_uniquely_owned<T>(arc: Arc<Mutex<T>>) -> T {
 
 pub struct PaneEntry {
     pub shell: String,
+    pub cwd: Option<String>,
     pub handle: PtyHandle,
     pub output_tx: broadcast::Sender<Vec<u8>>,
     /// Kept in sync with every byte the pane has produced, so a new
@@ -93,8 +94,14 @@ impl Supervisor {
         }
     }
 
-    pub fn spawn_pane(&self, shell: &str, cols: u16, rows: u16) -> io::Result<u64> {
-        self.spawn_pane_with_restart(shell, cols, rows, false)
+    pub fn spawn_pane(
+        &self,
+        shell: &str,
+        cols: u16,
+        rows: u16,
+        cwd: Option<String>,
+    ) -> io::Result<u64> {
+        self.spawn_pane_with_restart(shell, cols, rows, false, cwd)
     }
 
     /// Like `spawn_pane`, but if `restart` is set the daemon relaunches
@@ -107,8 +114,11 @@ impl Supervisor {
         cols: u16,
         rows: u16,
         restart: bool,
+        cwd: Option<String>,
     ) -> io::Result<u64> {
-        let handle = self.backend.spawn(shell, PtySize { cols, rows })?;
+        let handle = self
+            .backend
+            .spawn(shell, PtySize { cols, rows }, cwd.as_deref())?;
         let child_pid = handle.child.lock().unwrap().process_id();
 
         let (output_tx, _rx) = broadcast::channel(OUTPUT_CHANNEL_CAPACITY);
@@ -120,6 +130,7 @@ impl Supervisor {
 
         let entry = Arc::new(PaneEntry {
             shell: shell.to_string(),
+            cwd,
             handle,
             output_tx,
             emulator,
@@ -241,7 +252,11 @@ fn spawn_reader_thread(entry: Arc<PaneEntry>) {
         }
 
         let (cols, rows) = *entry.current_size.lock().unwrap();
-        match ConPtyBackend::new().spawn(&entry.shell, PtySize { cols, rows }) {
+        match ConPtyBackend::new().spawn(
+            &entry.shell,
+            PtySize { cols, rows },
+            entry.cwd.as_deref(),
+        ) {
             Ok(new_handle) => {
                 let new_pid = new_handle.child.lock().unwrap().process_id();
                 *entry.handle.child.lock().unwrap() = take_uniquely_owned(new_handle.child);

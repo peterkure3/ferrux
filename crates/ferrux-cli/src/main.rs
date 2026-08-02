@@ -56,7 +56,10 @@ async fn run(cli: Cli) -> io::Result<()> {
     match cli.command {
         Commands::New { shell, cols, rows } => {
             let mut client = connect_or_spawn_daemon().await?;
-            write_message(&mut client, &Request::SpawnPane { shell, cols, rows }).await?;
+            let cwd = std::env::current_dir()
+                .ok()
+                .map(|p| p.to_string_lossy().into_owned());
+            write_message(&mut client, &Request::SpawnPane { shell, cols, rows, cwd }).await?;
             match read_message(&mut client).await? {
                 Response::PaneSpawned { id } => println!("pane {id} spawned"),
                 Response::Error { message } => eprintln!("error: {message}"),
