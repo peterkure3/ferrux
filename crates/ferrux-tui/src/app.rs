@@ -25,9 +25,9 @@ use crate::session_store::TomlSessionStore;
 use crate::widgets::{pane_view, sidebar, status_line};
 
 const SCROLLBACK_LINES: usize = 1000;
-// cmd.exe ships with every Windows install; pwsh.exe (PowerShell 7+) is
-// an optional download and can't be assumed present.
-const DEFAULT_SHELL: &str = "cmd.exe";
+// powershell.exe (Windows PowerShell) ships with every Windows install,
+// unlike pwsh.exe (PowerShell 7+, an optional download) — safe default.
+const DEFAULT_SHELL: &str = "powershell.exe";
 const SIDEBAR_WIDTH: u16 = 22;
 
 /// Attaches to `pane_id` on the running daemon and renders its output
@@ -140,7 +140,7 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
 /// multi-pane session: split-tree layout, sidebar, `Ctrl+O` to cycle
 /// focus, tmux-style `Ctrl+B` prefix keybindings (`v`/`h` split, `x`
 /// close, `s` save), and TOML persistence under `~/.ferrux/sessions/`.
-pub async fn run(name: String) -> io::Result<()> {
+pub async fn run(name: String, default_shell: String) -> io::Result<()> {
     // Panes should open in whatever directory the user ran `ferrux open`
     // from, not the daemon's (possibly long-stale) working directory.
     let cwd = std::env::current_dir()
@@ -179,11 +179,11 @@ pub async fn run(name: String) -> io::Result<()> {
         workspace.root = Some(remap_ids(&old_root, &id_map));
         workspace.panes = new_panes;
     } else {
-        let new_id = daemon_client::spawn_pane(DEFAULT_SHELL, 80, 24, cwd.clone()).await?;
+        let new_id = daemon_client::spawn_pane(&default_shell, 80, 24, cwd.clone()).await?;
         workspace.root = Some(SplitNode::Leaf(PaneId(new_id)));
         workspace.panes = vec![PaneRecord {
             id: PaneId(new_id),
-            shell: DEFAULT_SHELL.to_string(),
+            shell: default_shell,
         }];
     }
 

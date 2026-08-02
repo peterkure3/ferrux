@@ -16,9 +16,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Spawn a new pane running `shell`.
+    /// Spawn a new pane running `shell` (e.g. `powershell.exe`, `cmd.exe`,
+    /// `pwsh.exe` if installed).
     New {
-        #[arg(long, default_value = "cmd.exe")]
+        #[arg(long, default_value = "powershell.exe")]
         shell: String,
         #[arg(long, default_value_t = 120)]
         cols: u16,
@@ -38,6 +39,11 @@ enum Commands {
     Open {
         #[arg(default_value = "default")]
         name: String,
+        /// Shell for newly created panes (e.g. `powershell.exe`, `cmd.exe`,
+        /// `pwsh.exe` if installed). Ignored for panes loaded from a saved
+        /// workspace, which keep their own shell.
+        #[arg(long, default_value = "powershell.exe")]
+        shell: String,
     },
     /// List saved workspace names.
     Workspaces,
@@ -102,9 +108,9 @@ async fn run(cli: Cli) -> io::Result<()> {
             connect_or_spawn_daemon().await?;
             ferrux_tui::app::view_pane(id).await
         }
-        Commands::Open { name } => {
+        Commands::Open { name, shell } => {
             connect_or_spawn_daemon().await?;
-            ferrux_tui::app::run(name).await
+            ferrux_tui::app::run(name, shell).await
         }
         Commands::Workspaces => {
             let store = ferrux_tui::session_store::TomlSessionStore::new()?;
