@@ -490,7 +490,7 @@ checksum = "dd2e7510819d6fbf51a5545c8f922716ecfb14df168a3242f7d33e0239efe6a1"
 
 [[package]]
 name = "ferrux-agent-detect"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "ferrux-core",
  "sysinfo",
@@ -498,7 +498,7 @@ dependencies = [
 
 [[package]]
 name = "ferrux-cli"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "clap",
  "crossterm",
@@ -510,14 +510,14 @@ dependencies = [
 
 [[package]]
 name = "ferrux-core"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "ferrux-daemon"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "ferrux-agent-detect",
  "ferrux-core",
@@ -533,7 +533,7 @@ dependencies = [
 
 [[package]]
 name = "ferrux-ipc"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "ferrux-core",
  "serde",
@@ -543,7 +543,7 @@ dependencies = [
 
 [[package]]
 name = "ferrux-notify"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "ferrux-core",
  "windows-sys",
@@ -552,7 +552,7 @@ dependencies = [
 
 [[package]]
 name = "ferrux-pty"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "ferrux-core",
@@ -561,14 +561,14 @@ dependencies = [
 
 [[package]]
 name = "ferrux-term"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "vt100",
 ]
 
 [[package]]
 name = "ferrux-tui"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "crossterm",
  "directories",
