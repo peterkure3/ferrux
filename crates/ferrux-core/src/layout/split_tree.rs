@@ -18,7 +18,7 @@ pub struct PaneRect {
 pub fn layout(node: &SplitNode, area: Rect) -> Vec<PaneRect> {
     match node {
         SplitNode::Leaf(pane) => vec![PaneRect {
-            pane: pane.clone(),
+            pane: *pane,
             rect: area,
         }],
         SplitNode::Split {
@@ -250,8 +250,7 @@ mod tests {
     #[test]
     fn split_leaf_replaces_target_with_a_split() {
         let node = SplitNode::Leaf(PaneId(1));
-        let result =
-            split_leaf(&node, PaneId(1), PaneId(2), SplitDirection::Vertical, 50).unwrap();
+        let result = split_leaf(&node, PaneId(1), PaneId(2), SplitDirection::Vertical, 50).unwrap();
 
         assert_eq!(leaves(&result), vec![PaneId(1), PaneId(2)]);
         match result {

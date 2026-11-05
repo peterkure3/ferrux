@@ -1,0 +1,17 @@
+﻿{
+    "TimestampUtc":  "2026-11-04T14:26:02.3233370Z",
+    "Profile":  "release",
+    "Seconds":  151.63714009999998,
+    "Bytes":  555299038,
+    "Binaries":  [
+                     {
+                         "Name":  "ferrux-daemon.exe",
+                         "Length":  1238016
+                     },
+                     {
+                         "Name":  "ferrux.exe",
+                         "Length":  2356736
+                     }
+                 ],
+    "Command":  "cargo build --workspace --locked --offline --profile release --target-dir target\\performance\\thin --config target\\performance\\thin.toml"
+}

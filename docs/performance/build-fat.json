@@ -1,0 +1,17 @@
+﻿{
+    "TimestampUtc":  "2026-11-04T14:29:40.7089970Z",
+    "Profile":  "release",
+    "Seconds":  164.1761379,
+    "Bytes":  549688589,
+    "Binaries":  [
+                     {
+                         "Name":  "ferrux-daemon.exe",
+                         "Length":  1083904
+                     },
+                     {
+                         "Name":  "ferrux.exe",
+                         "Length":  2115584
+                     }
+                 ],
+    "Command":  "cargo build --workspace --locked --offline --profile release --target-dir target\\performance\\fat --config target\\performance\\fat.toml"
+}

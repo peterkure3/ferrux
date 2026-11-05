@@ -5,5 +5,5 @@ edition.workspace = true
 
 [dependencies]
 ferrux-core = { version = "0.1.0", path = "../ferrux-core" }
-windows-sys = { version = "0.61.2", features = ["Win32_System_Diagnostics_Debug", "Win32_UI_WindowsAndMessaging"] }
-winrt-notification = "0.5.1"
+windows-sys.workspace = true
+winrt-notification.workspace = true

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use tokio::net::windows::named_pipe::ServerOptions;
 
 use ferrux_core::domain::manifest::Manifest;
-use ferrux_ipc::PIPE_NAME;
+use ferrux_ipc::pipe_name;
 use ferrux_notify::WindowsNotifier;
 use supervisor::Supervisor;
 
@@ -15,21 +15,23 @@ const MANIFEST_FILE: &str = "ferrux.json";
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    let pipe_name = pipe_name();
     let supervisor = Arc::new(Supervisor::new(Arc::new(WindowsNotifier)));
 
     load_manifest(&supervisor);
     tokio::spawn(watchdog::run(supervisor.clone()));
+    tokio::spawn(supervisor::run_agent_detection(supervisor.clone()));
 
     let mut server = ServerOptions::new()
         .first_pipe_instance(true)
-        .create(PIPE_NAME)?;
+        .create(&pipe_name)?;
 
-    println!("ferrux-daemon listening on {PIPE_NAME}");
+    println!("ferrux-daemon listening on {pipe_name}");
 
     loop {
         server.connect().await?;
         let connected = server;
-        server = ServerOptions::new().create(PIPE_NAME)?;
+        server = ServerOptions::new().create(&pipe_name)?;
 
         let supervisor = supervisor.clone();
         tokio::spawn(async move {

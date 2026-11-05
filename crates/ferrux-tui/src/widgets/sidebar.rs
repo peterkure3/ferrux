@@ -1,62 +1,235 @@
-use ratatui::style::{Color, Modifier, Style};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, List, ListItem};
-
-use ferrux_core::domain::agent::AgentKind;
-use ferrux_core::domain::workspace::PaneId;
-
-pub struct SidebarEntry {
-    pub id: PaneId,
-    pub shell: String,
-    pub agent_kind: Option<AgentKind>,
+use crate::ui::{shell_label, UiState};
+use ferrux_core::domain::workspace::{PaneId, Workspace};
+use ratatui::{
+    layout::Rect,
+    style::{Modifier, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, Paragraph},
+    Frame,
+};
+pub fn capacity(area: Rect) -> usize {
+    usize::from(if area.height >= 20 {
+        area.height.saturating_sub(17)
+    } else if area.height >= 16 {
+        area.height.saturating_sub(12)
+    } else {
+        area.height.saturating_sub(4)
+    })
+    .max(1)
 }
-
-fn agent_tag(kind: AgentKind) -> (&'static str, Color) {
-    match kind {
-        AgentKind::ClaudeCode => ("claude", Color::Magenta),
-        AgentKind::Codex => ("codex", Color::Green),
-        AgentKind::Unknown => ("agent", Color::Yellow),
+pub fn clicked_session(
+    area: Rect,
+    workspace: &Workspace,
+    state: &UiState,
+    column: u16,
+    row: u16,
+) -> Option<PaneId> {
+    if area.contains((column, row).into())
+        && state.sessions_expanded
+        && row >= area.y + 3
+        && usize::from(row - area.y - 3) < capacity(area)
+    {
+        workspace
+            .panes
+            .get(state.sidebar_scroll + usize::from(row - area.y - 3))
+            .map(|pane| pane.id)
+    } else {
+        None
     }
 }
-
-/// A narrow pane list: workspace name as the title, one line per pane —
-/// id, shell, and a colored agent tag when a known agent CLI is
-/// detected running under it — the focused pane highlighted.
-pub fn render<'a>(
-    workspace_name: &'a str,
-    entries: &'a [SidebarEntry],
+pub fn render(
+    frame: &mut Frame<'_>,
+    area: Rect,
+    workspace: &Workspace,
     focused: Option<PaneId>,
-) -> List<'a> {
-    let items: Vec<ListItem> = entries
-        .iter()
-        .map(|entry| {
-            let is_focused = Some(entry.id) == focused;
-            let marker = if is_focused { "> " } else { "  " };
-            let base_style = if is_focused {
-                Style::default().add_modifier(Modifier::BOLD | Modifier::REVERSED)
-            } else {
-                Style::default()
-            };
-
-            let mut spans = vec![Span::styled(
-                format!("{marker}{} {}", entry.id.0, entry.shell),
-                base_style,
-            )];
-            if let Some(kind) = entry.agent_kind {
-                let (label, color) = agent_tag(kind);
-                spans.push(Span::styled(
-                    format!(" [{label}]"),
-                    base_style.fg(color).add_modifier(Modifier::BOLD),
-                ));
+    state: &mut UiState,
+) {
+    if area.width == 0 || area.height == 0 {
+        return;
+    }
+    let theme = state.theme;
+    let rows = capacity(area);
+    if state.follow_focus {
+        if let Some(index) = workspace
+            .panes
+            .iter()
+            .position(|pane| Some(pane.id) == focused)
+        {
+            if index < state.sidebar_scroll {
+                state.sidebar_scroll = index;
             }
-
-            ListItem::new(Line::from(spans))
-        })
-        .collect();
-
-    List::new(items).block(
+            if index >= state.sidebar_scroll + rows {
+                state.sidebar_scroll = index + 1 - rows;
+            }
+        }
+        state.follow_focus = false;
+    }
+    state.sidebar_scroll = state
+        .sidebar_scroll
+        .min(workspace.panes.len().saturating_sub(rows));
+    frame.render_widget(
         Block::default()
-            .title(workspace_name.to_string())
-            .borders(Borders::ALL),
-    )
+            .style(theme.base())
+            .borders(Borders::RIGHT)
+            .border_style(Style::default().fg(theme.muted)),
+        area,
+    );
+    let heading = |text: &str| {
+        Line::from(Span::styled(
+            text.to_owned(),
+            Style::default().fg(theme.text).add_modifier(Modifier::BOLD),
+        ))
+    };
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled(
+                " SESSIONS ",
+                Style::default().fg(theme.text).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("({})", workspace.panes.len()),
+                Style::default().fg(theme.warning),
+            ),
+        ]),
+        Line::raw(""),
+        Line::from(Span::styled(
+            format!(
+                " {} {}",
+                if state.sessions_expanded {
+                    "▾"
+                } else {
+                    "▸"
+                },
+                workspace.name
+            ),
+            Style::default().fg(theme.secondary),
+        )),
+    ];
+    if state.sessions_expanded {
+        for pane in workspace.panes.iter().skip(state.sidebar_scroll).take(rows) {
+            let selected = Some(pane.id) == focused;
+            let status = state.statuses.get(&pane.id);
+            let indicator = match status.and_then(|s| s.running) {
+                Some(true) => "●",
+                Some(false) => "×",
+                None => "?",
+            };
+            let color = match status.and_then(|s| s.running) {
+                Some(true) => theme.success,
+                Some(false) => theme.muted,
+                None => theme.warning,
+            };
+            let style = if selected {
+                Style::default()
+                    .fg(theme.text)
+                    .bg(theme.selection)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                theme.base().fg(theme.secondary)
+            };
+            let agent = status
+                .and_then(|s| s.agent)
+                .map(|kind| format!(" {kind:?}"))
+                .unwrap_or_default();
+            lines.push(
+                Line::from(vec![
+                    Span::styled(if selected { " > " } else { "   " }, style),
+                    Span::styled(indicator, style.fg(color)),
+                    Span::styled(
+                        format!(" {} {}{agent}", pane.id.0, shell_label(&pane.shell)),
+                        style,
+                    ),
+                ])
+                .style(style),
+            );
+        }
+    }
+    while lines.len() < 3 + rows {
+        lines.push(Line::raw(""));
+    }
+    if area.height >= 16 {
+        lines.push(Line::from(Span::styled(
+            " ───────────────────────",
+            Style::default().fg(theme.muted),
+        )));
+        lines.push(heading(" WORKSPACE"));
+        lines.push(Line::from(format!(
+            " ▣ {}",
+            state.git.repository.as_deref().unwrap_or(&workspace.name)
+        )));
+        lines.push(Line::from(Span::styled(
+            format!(
+                " branch: {}",
+                state
+                    .git
+                    .branch
+                    .as_deref()
+                    .unwrap_or("not a Git repository")
+            ),
+            Style::default().fg(theme.info),
+        )));
+        lines.push(Line::from(Span::styled(
+            match state.git.dirty {
+                Some(true) => " ! working tree modified",
+                Some(false) => " ✓ working tree clean",
+                None => " Git status unavailable",
+            },
+            Style::default().fg(match state.git.dirty {
+                Some(true) => theme.warning,
+                Some(false) => theme.success,
+                None => theme.muted,
+            }),
+        )));
+    }
+    if area.height >= 20 {
+        lines.push(Line::raw(""));
+        lines.push(heading(" ACTIVITY"));
+        let known = workspace
+            .panes
+            .iter()
+            .filter_map(|p| state.statuses.get(&p.id).and_then(|s| s.running))
+            .count();
+        let running = workspace
+            .panes
+            .iter()
+            .filter(|p| {
+                state
+                    .statuses
+                    .get(&p.id)
+                    .is_some_and(|s| s.running == Some(true))
+            })
+            .count();
+        lines.push(Line::from(Span::styled(
+            if known == workspace.panes.len() {
+                format!(" ● {running} processes running")
+            } else {
+                format!(
+                    " ● {running} running / {} unknown",
+                    workspace.panes.len() - known
+                )
+            },
+            Style::default().fg(theme.success),
+        )));
+        let agents = workspace
+            .panes
+            .iter()
+            .filter(|p| state.statuses.get(&p.id).is_some_and(|s| s.agent.is_some()))
+            .count();
+        lines.push(Line::from(format!(" {agents} agents detected")));
+        lines.push(Line::from(Span::styled(
+            " Approvals unavailable",
+            Style::default().fg(theme.muted),
+        )));
+        lines.push(Line::from(Span::styled(
+            " Notifications unavailable",
+            Style::default().fg(theme.muted),
+        )));
+    }
+    frame.render_widget(
+        Paragraph::new(lines).style(theme.base()),
+        Rect {
+            width: area.width.saturating_sub(1),
+            ..area
+        },
+    );
 }

@@ -1,0 +1,17 @@
+﻿{
+    "TimestampUtc":  "2026-11-04T14:22:25.5327233Z",
+    "Profile":  "release",
+    "Seconds":  3.7839375,
+    "Bytes":  548779155,
+    "Binaries":  [
+                     {
+                         "Name":  "ferrux-daemon.exe",
+                         "Length":  1234944
+                     },
+                     {
+                         "Name":  "ferrux.exe",
+                         "Length":  2339328
+                     }
+                 ],
+    "Command":  "cargo build --workspace --locked --offline --profile release --target-dir target/performance/optimized"
+}

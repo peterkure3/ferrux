@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use sysinfo::{Pid, ProcessesToUpdate, System};
+use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 
 use ferrux_core::ports::notification_sink::Notification;
 
@@ -22,22 +22,44 @@ pub async fn run(supervisor: Arc<Supervisor>) {
 }
 
 async fn check_memory_pressure(supervisor: &Arc<Supervisor>) {
-    for (id, pid, restart) in supervisor.pane_snapshot() {
-        let Some(pid) = pid else { continue };
+    let panes = supervisor.pane_snapshot();
+    let pids: Vec<_> = panes
+        .iter()
+        .filter_map(|(_, pid, _)| pid.map(Pid::from_u32))
+        .collect();
+    if pids.is_empty() {
+        return;
+    }
+    let memory = match tokio::task::spawn_blocking(move || {
+        let mut system = System::new();
+        system.refresh_processes_specifics(
+            ProcessesToUpdate::Some(&pids),
+            true,
+            ProcessRefreshKind::nothing().with_memory(),
+        );
+        system
+            .processes()
+            .iter()
+            .map(|(pid, process)| (pid.as_u32(), process.memory()))
+            .collect::<std::collections::HashMap<_, _>>()
+    })
+    .await
+    {
+        Ok(memory) => memory,
+        Err(error) => {
+            eprintln!("memory watchdog failed: {error}");
+            return;
+        }
+    };
 
-        let memory_bytes = tokio::task::spawn_blocking(move || {
-            let mut system = System::new();
-            system.refresh_processes(ProcessesToUpdate::Some(&[Pid::from_u32(pid)]), true);
-            system
-                .process(Pid::from_u32(pid))
-                .map(|process| process.memory())
-                .unwrap_or(0)
-        })
-        .await
-        .unwrap_or(0);
+    for (id, pid, restart) in panes {
+        let memory_bytes = pid.and_then(|pid| memory.get(&pid).copied()).unwrap_or(0);
 
         if memory_bytes > MEMORY_LIMIT_BYTES {
-            let _ = supervisor.kill_for_restart(id);
+            if let Err(error) = supervisor.kill_for_restart(id) {
+                eprintln!("watchdog failed to kill pane {id}: {error}");
+                continue;
+            }
             let restart_note = if restart { " (restarting)" } else { "" };
             supervisor.notify(Notification {
                 title: format!("pane {id}"),

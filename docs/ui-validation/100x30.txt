@@ -1,0 +1,30 @@
+ ◆ Ferrux │ Workspace: review │ main │ 2 Sessions                                       ● Connected 
+────────────────────────────────────────────────────────────────────────────────────────────────────
+ SESSIONS (2)              │┌ 1 powershell.exe ─────── ● ACTIVE ┬ 2 cmd.exe ───────────────────────┐
+                           ││rporation. All rights reserved.    │Microsoft Windows [Version 10.0.26│
+ ▾ review                  ││                                   │200.9818]                         │
+ > ● 1 powershell.exe      ││PS D:\Github\ferrux> Write-Output (│(c) Microsoft Corporation. All rig│
+   ● 2 cmd.exe             ││'FERRUX_'+'INPUT_OK')              │hts reserved.                     │
+                           ││Error reading or writing history fi│                                  │
+                           ││le 'C:\Users\Peter Kure\AppData\Roa│D:\Github\ferrux>echo FERRUX_CMD_%│
+                           ││ming\Microsoft\Windows\PowerShell\P│OS%                               │
+                           ││SReadLine\ConsoleHost_history.txt':│FERRUX_CMD_Windows_NT             │
+                           ││ Access to the path 'C:\Users\Peter│                                  │
+                           ││ Kure\AppData\Roaming\Microsoft\Win│D:\Github\ferrux>                 │
+                           ││dows\PowerShell\PSReadLine\ConsoleH│                                  │
+                           ││ost_history.txt' is denied.        │                                  │
+ ───────────────────────   ││ưmFERRUX_INPUT_OK                  │                                  │
+ WORKSPACE                 ││PS D:\Github\ferrux>               │                                  │
+ ▣ ferrux                  ││                                   │                                  │
+ branch: main              ││                                   │                                  │
+ ! working tree modified   ││                                   │                                  │
+                           ││                                   │                                  │
+ ACTIVITY                  ││                                   │                                  │
+ ● 2 processes running     ││                                   │                                  │
+ 0 agents detected         ││                                   │                                  │
+ Approvals unavailable     ││                                   │                                  │
+ Notifications unavailable ││                                   │                                  │
+                           ││                                   │                                  │
+                           ││                                   │                                  │
+                           │└───────────────────────────────────┴──────────────────────────────────┘
+ NORMAL  │ ^Q out │ ^B ? help │ ^B v V │ ^B h H │ ^O next │ ^B s save │ ^B x close  Workspace saved 

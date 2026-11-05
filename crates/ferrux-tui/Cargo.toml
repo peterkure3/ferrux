@@ -4,12 +4,11 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-crossterm = "0.29.0"
-directories = "6.0.0"
+crossterm.workspace = true
+directories.workspace = true
 ferrux-core = { version = "0.1.0", path = "../ferrux-core" }
 ferrux-ipc = { version = "0.1.0", path = "../ferrux-ipc" }
 ferrux-term = { version = "0.1.0", path = "../ferrux-term" }
-ratatui = "0.30.2"
-serde = { version = "1.0.229", features = ["derive"] }
-tokio = { version = "1.53.1", features = ["rt-multi-thread", "net", "io-util", "macros", "sync", "time"] }
-toml = "1.1.3"
+ratatui.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "net", "io-util", "macros", "sync", "time"] }
+toml.workspace = true

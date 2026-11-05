@@ -8,7 +8,6 @@ use tokio::sync::broadcast;
 
 use ferrux_agent_detect::ProcessNameDetector;
 use ferrux_core::domain::agent::AgentKind;
-use ferrux_core::ports::agent_detector::AgentDetector;
 use ferrux_core::ports::notification_sink::{Notification, NotificationSink};
 use ferrux_core::ports::pty_backend::{PtyBackend, PtySize};
 use ferrux_ipc::PaneInfo;
@@ -56,7 +55,7 @@ pub struct PaneEntry {
     pub shell: String,
     pub cwd: Option<String>,
     pub handle: PtyHandle,
-    pub output_tx: broadcast::Sender<Vec<u8>>,
+    pub output_tx: broadcast::Sender<Arc<[u8]>>,
     /// Kept in sync with every byte the pane has produced, so a new
     /// attach can replay the current screen instead of starting blank.
     /// Reset to a blank screen on restart.
@@ -142,7 +141,6 @@ impl Supervisor {
         });
 
         spawn_reader_thread(entry.clone());
-        spawn_agent_detection_task(entry.clone(), self.notifier.clone(), id);
 
         self.panes.lock().unwrap().insert(id, entry);
         Ok(id)
@@ -157,6 +155,10 @@ impl Supervisor {
                 id: *id,
                 shell: entry.shell.clone(),
                 agent_kind: *entry.agent_kind.lock().unwrap(),
+                running: Some(
+                    entry.alive.load(Ordering::SeqCst)
+                        && entry.current_pid.lock().unwrap().is_some(),
+                ),
             })
             .collect()
     }
@@ -222,100 +224,130 @@ impl Supervisor {
 /// restarts. Exits for good once the process dies without `restart`, or
 /// once `kill` has marked the pane no longer alive.
 fn spawn_reader_thread(entry: Arc<PaneEntry>) {
-    std::thread::spawn(move || loop {
-        let mut reader = match entry.handle.master.lock().unwrap().try_clone_reader() {
-            Ok(reader) => reader,
-            Err(e) => {
-                eprintln!("pane reader thread exiting: {e}");
-                break;
-            }
-        };
-
-        let mut buf = [0u8; 4096];
+    std::thread::spawn(move || {
         loop {
-            match reader.read(&mut buf) {
-                Ok(0) => break,
-                Ok(n) => {
-                    let chunk = &buf[..n];
-                    entry.emulator.lock().unwrap().process(chunk);
-                    answer_cursor_position_queries(chunk, &entry.emulator, &entry.handle.writer);
-                    // No subscribers is fine; keep draining so the pane
-                    // doesn't block on a full pipe.
-                    let _ = entry.output_tx.send(chunk.to_vec());
+            let mut reader = match entry.handle.master.lock().unwrap().try_clone_reader() {
+                Ok(reader) => reader,
+                Err(e) => {
+                    eprintln!("pane reader thread exiting: {e}");
+                    break;
                 }
-                Err(_) => break,
-            }
-        }
+            };
 
-        if !entry.restart || !entry.alive.load(Ordering::SeqCst) {
-            break;
-        }
-
-        let (cols, rows) = *entry.current_size.lock().unwrap();
-        match ConPtyBackend::new().spawn(
-            &entry.shell,
-            PtySize { cols, rows },
-            entry.cwd.as_deref(),
-        ) {
-            Ok(new_handle) => {
-                let new_pid = new_handle.child.lock().unwrap().process_id();
-                *entry.handle.child.lock().unwrap() = take_uniquely_owned(new_handle.child);
-                *entry.handle.master.lock().unwrap() = take_uniquely_owned(new_handle.master);
-                *entry.handle.writer.lock().unwrap() = take_uniquely_owned(new_handle.writer);
-                *entry.current_pid.lock().unwrap() = new_pid;
-                *entry.emulator.lock().unwrap() = Emulator::new(rows, cols, SCROLLBACK_LINES);
-                *entry.agent_kind.lock().unwrap() = None;
+            let mut buf = [0u8; 4096];
+            loop {
+                match reader.read(&mut buf) {
+                    Ok(0) => break,
+                    Ok(n) => {
+                        let chunk = &buf[..n];
+                        // Serialize screen updates and publication with attach
+                        // snapshots: a subscriber sees each byte exactly once.
+                        {
+                            let mut emulator = entry.emulator.lock().unwrap();
+                            emulator.process(chunk);
+                            if entry.output_tx.receiver_count() != 0 {
+                                let _ = entry.output_tx.send(Arc::from(chunk));
+                            }
+                        }
+                        answer_cursor_position_queries(
+                            chunk,
+                            &entry.emulator,
+                            &entry.handle.writer,
+                        );
+                        // No subscribers is fine; keep draining so the pane
+                        // doesn't block on a full pipe.
+                    }
+                    Err(_) => break,
+                }
             }
-            Err(e) => {
-                eprintln!("pane restart failed: {e}");
+
+            if !entry.restart || !entry.alive.load(Ordering::SeqCst) {
                 break;
             }
-        }
-    });
-}
 
-/// Polls the pane's current process tree for a known agent CLI and
-/// notifies on start/end transitions. Re-reads `current_pid` each tick
-/// so it keeps working across restarts. Stops once `alive` is cleared.
-fn spawn_agent_detection_task(
-    entry: Arc<PaneEntry>,
-    notifier: Arc<dyn NotificationSink + Send + Sync>,
-    id: u64,
-) {
-    tokio::spawn(async move {
-        let mut last: Option<AgentKind> = None;
-        loop {
+            // A fast-crashing shell must not create an unbounded restart storm.
+            std::thread::sleep(Duration::from_millis(250));
             if !entry.alive.load(Ordering::SeqCst) {
                 break;
             }
 
-            let pid = *entry.current_pid.lock().unwrap();
-            let detected = match pid {
-                Some(pid) => {
-                    tokio::task::spawn_blocking(move || ProcessNameDetector::new().detect(pid))
-                        .await
-                        .unwrap_or(None)
+            let (cols, rows) = *entry.current_size.lock().unwrap();
+            match ConPtyBackend::new().spawn(
+                &entry.shell,
+                PtySize { cols, rows },
+                entry.cwd.as_deref(),
+            ) {
+                Ok(new_handle) => {
+                    let new_pid = new_handle.child.lock().unwrap().process_id();
+                    *entry.handle.child.lock().unwrap() = take_uniquely_owned(new_handle.child);
+                    *entry.handle.master.lock().unwrap() = take_uniquely_owned(new_handle.master);
+                    *entry.handle.writer.lock().unwrap() = take_uniquely_owned(new_handle.writer);
+                    *entry.current_pid.lock().unwrap() = new_pid;
+                    *entry.emulator.lock().unwrap() = Emulator::new(rows, cols, SCROLLBACK_LINES);
+                    *entry.agent_kind.lock().unwrap() = None;
                 }
-                None => None,
-            };
+                Err(e) => {
+                    eprintln!("pane restart failed: {e}");
+                    break;
+                }
+            }
+        }
+        entry.alive.store(false, Ordering::SeqCst);
+        *entry.current_pid.lock().unwrap() = None;
+    });
+}
 
+/// Shares one process snapshot across all panes and notifies on agent
+/// transitions. Re-reads current PIDs each tick to handle exit/restart;
+/// an empty daemon does not enumerate OS processes.
+pub async fn run_agent_detection(supervisor: Arc<Supervisor>) {
+    loop {
+        tokio::time::sleep(AGENT_POLL_INTERVAL).await;
+        let entries: Vec<_> = supervisor
+            .panes
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(id, entry)| (*id, entry.clone(), *entry.current_pid.lock().unwrap()))
+            .collect();
+        let roots: Vec<_> = entries.iter().filter_map(|(_, _, pid)| *pid).collect();
+        let detected = match tokio::task::spawn_blocking(move || {
+            ProcessNameDetector::new().detect_many(&roots)
+        })
+        .await
+        {
+            Ok(detected) => detected,
+            Err(error) => {
+                eprintln!("agent detection failed: {error}");
+                continue;
+            }
+        };
+        let mut detected = detected.into_iter();
+        for (id, entry, pid) in entries {
+            let detected = if pid.is_some() {
+                detected.next().flatten()
+            } else {
+                None
+            };
+            // Do not publish a stale classification across a restart.
+            if *entry.current_pid.lock().unwrap() != pid {
+                continue;
+            }
+            let last = *entry.agent_kind.lock().unwrap();
             if detected != last {
                 *entry.agent_kind.lock().unwrap() = detected;
                 match (last, detected) {
-                    (None, Some(kind)) => notifier.notify(Notification {
+                    (None, Some(kind)) => supervisor.notify(Notification {
                         title: format!("{} — pane {id}", entry.shell),
                         body: format!("{kind:?} started"),
                     }),
-                    (Some(kind), None) => notifier.notify(Notification {
+                    (Some(kind), None) => supervisor.notify(Notification {
                         title: format!("{} — pane {id}", entry.shell),
                         body: format!("{kind:?} ended"),
                     }),
                     _ => {}
                 }
-                last = detected;
             }
-
-            tokio::time::sleep(AGENT_POLL_INTERVAL).await;
         }
-    });
+    }
 }

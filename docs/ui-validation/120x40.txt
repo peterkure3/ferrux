@@ -1,0 +1,40 @@
+ ◆ Ferrux │ Workspace: review │ main │ 2 Sessions                                   ● Connected  ^B ? Help  ^B , Config 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ SESSIONS (2)              │┌ 1 powershell.exe ───────────────── ● ACTIVE ┬ 2 cmd.exe ─────────────────────────────────┐
+                           ││rporation. All rights reserved.              │Microsoft Windows [Version 10.0.26200.9818] │
+ ▾ review                  ││                                             │(c) Microsoft Corporation. All rights reserv│
+ > ● 1 powershell.exe      ││PS D:\Github\ferrux> Write-Output ('FERRUX_'+│ed.                                         │
+   ● 2 cmd.exe             ││'INPUT_OK')                                  │                                            │
+                           ││Error reading or writing history file 'C:\Use│D:\Github\ferrux>echo FERRUX_CMD_%OS%       │
+                           ││rs\Peter Kure\AppData\Roaming\Microsoft\Windo│FERRUX_CMD_Windows_NT                       │
+                           ││ws\PowerShell\PSReadLine\ConsoleHost_history.│                                            │
+                           ││txt': Access to the path 'C:\Users\Peter Kure│D:\Github\ferrux>                           │
+                           ││\AppData\Roaming\Microsoft\Windows\PowerShell│                                            │
+                           ││\PSReadLine\ConsoleHost_history.txt' is denie│                                            │
+                           ││d.                                           │                                            │
+                           ││ưmFERRUX_INPUT_OK                            │                                            │
+                           ││PS D:\Github\ferrux>                         │                                            │
+                           ││                                             │                                            │
+                           ││                                             │                                            │
+                           ││                                             │                                            │
+                           ││                                             │                                            │
+                           ││                                             │                                            │
+                           ││                                             │                                            │
+                           ││                                             │                                            │
+                           ││                                             │                                            │
+                           ││                                             │                                            │
+ ───────────────────────   ││                                             │                                            │
+ WORKSPACE                 ││                                             │                                            │
+ ▣ ferrux                  ││                                             │                                            │
+ branch: main              ││                                             │                                            │
+ ! working tree modified   ││                                             │                                            │
+                           ││                                             │                                            │
+ ACTIVITY                  ││                                             │                                            │
+ ● 2 processes running     ││                                             │                                            │
+ 0 agents detected         ││                                             │                                            │
+ Approvals unavailable     ││                                             │                                            │
+ Notifications unavailable ││                                             │                                            │
+                           ││                                             │                                            │
+                           ││                                             │                                            │
+                           │└─────────────────────────────────────────────┴────────────────────────────────────────────┘
+ NORMAL  │ ^B v Split V │ ^B h Split H │ ^B x Close │ ^B s Save │ ^Q Detach │ ^O Focus │ ^B ? Help      Workspace saved 

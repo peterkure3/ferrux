@@ -15,6 +15,12 @@ pub enum Action {
     FocusNext,
     ClosePane,
     SaveWorkspace,
+    FocusPrevious,
+    ToggleSidebar,
+    SidebarFocus,
+    Help,
+    Config,
+    Workspaces,
 }
 
 /// Translates a crossterm key event into an `Action`.
@@ -38,6 +44,13 @@ pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
             KeyCode::Char('h') => Some(Action::SplitHorizontal),
             KeyCode::Char('x') => Some(Action::ClosePane),
             KeyCode::Char('s') => Some(Action::SaveWorkspace),
+            KeyCode::Char('j') => Some(Action::FocusNext),
+            KeyCode::Char('k') => Some(Action::FocusPrevious),
+            KeyCode::Char('b') => Some(Action::ToggleSidebar),
+            KeyCode::Tab => Some(Action::SidebarFocus),
+            KeyCode::Char('?') => Some(Action::Help),
+            KeyCode::Char(',') => Some(Action::Config),
+            KeyCode::Char('w') => Some(Action::Workspaces),
             // Unrecognized prefix combo: swallow it rather than leaking a
             // stray keystroke into the pane.
             _ => None,
@@ -79,4 +92,39 @@ pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
     };
 
     Some(Action::Bytes(bytes))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn ui_extensions_only_consume_prefix_commands() {
+        for character in ['j', 'k', 'b', 'w', '?', ',', 's'] {
+            assert!(matches!(
+                translate(
+                    KeyEvent::new(KeyCode::Char(character), KeyModifiers::NONE),
+                    false
+                ),
+                Some(Action::Bytes(_))
+            ));
+        }
+        assert!(
+            matches!(translate(KeyEvent::new(KeyCode::Char('s'),KeyModifiers::CONTROL),false),Some(Action::Bytes(bytes)) if bytes==vec![19])
+        );
+        assert!(matches!(
+            translate(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::NONE), true),
+            Some(Action::SaveWorkspace)
+        ));
+        assert!(matches!(
+            translate(KeyEvent::new(KeyCode::Char('?'), KeyModifiers::NONE), true),
+            Some(Action::Help)
+        ));
+        assert!(matches!(
+            translate(
+                KeyEvent::new(KeyCode::Char('o'), KeyModifiers::CONTROL),
+                false
+            ),
+            Some(Action::FocusNext)
+        ));
+    }
 }

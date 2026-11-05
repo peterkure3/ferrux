@@ -1,0 +1,37 @@
+﻿[
+    {
+        "Variant":  "baseline",
+        "ParseNs":  375712700,
+        "TextConstructionNs":  448628000,
+        "IpcSerializationNs":  13813700,
+        "CliHelpMs":  41.365500000000004
+    },
+    {
+        "Variant":  "optimized",
+        "ParseNs":  353466800,
+        "TextConstructionNs":  575279400,
+        "IpcSerializationNs":  8969900,
+        "CliHelpMs":  42.6831
+    },
+    {
+        "Variant":  "thin",
+        "ParseNs":  282887200,
+        "TextConstructionNs":  459191000,
+        "IpcSerializationNs":  7123500,
+        "CliHelpMs":  41.918
+    },
+    {
+        "Variant":  "fat",
+        "ParseNs":  320694500,
+        "TextConstructionNs":  419468400,
+        "IpcSerializationNs":  7695700,
+        "CliHelpMs":  40.3523
+    },
+    {
+        "Variant":  "small",
+        "ParseNs":  646085800,
+        "TextConstructionNs":  675899700,
+        "IpcSerializationNs":  20772400,
+        "CliHelpMs":  48.4058
+    }
+]

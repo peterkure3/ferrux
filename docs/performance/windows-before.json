@@ -1,0 +1,106 @@
+﻿[
+    {
+        "Metric":  "daemon_ready_ms",
+        "Value":  773.4964
+    },
+    {
+        "Metric":  "panes_0_daemon_private_bytes",
+        "Value":  1974272
+    },
+    {
+        "Metric":  "panes_0_daemon_handles",
+        "Value":  124
+    },
+    {
+        "Metric":  "panes_0_idle_cpu_core_percent",
+        "Value":  0
+    },
+    {
+        "Metric":  "panes_0_list_mean_ms",
+        "Value":  2.236523
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  80.534
+    },
+    {
+        "Metric":  "panes_1_daemon_private_bytes",
+        "Value":  2871296
+    },
+    {
+        "Metric":  "panes_1_daemon_handles",
+        "Value":  138
+    },
+    {
+        "Metric":  "panes_1_idle_cpu_core_percent",
+        "Value":  6.770833333333333
+    },
+    {
+        "Metric":  "panes_1_list_mean_ms",
+        "Value":  1.5846190000000002
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  45.819500000000005
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  112.18
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  426.9725
+    },
+    {
+        "Metric":  "panes_4_daemon_private_bytes",
+        "Value":  4042752
+    },
+    {
+        "Metric":  "panes_4_daemon_handles",
+        "Value":  159
+    },
+    {
+        "Metric":  "panes_4_idle_cpu_core_percent",
+        "Value":  17.708333333333332
+    },
+    {
+        "Metric":  "panes_4_list_mean_ms",
+        "Value":  2.7022570000000004
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  117.21310000000001
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  98.577300000000008
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  120.22720000000001
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  392.584
+    },
+    {
+        "Metric":  "panes_8_daemon_private_bytes",
+        "Value":  5980160
+    },
+    {
+        "Metric":  "panes_8_daemon_handles",
+        "Value":  336
+    },
+    {
+        "Metric":  "panes_8_idle_cpu_core_percent",
+        "Value":  61.979166666666664
+    },
+    {
+        "Metric":  "panes_8_list_mean_ms",
+        "Value":  5.93334
+    },
+    {
+        "Metric":  "resized_panes",
+        "Value":  8
+    }
+]

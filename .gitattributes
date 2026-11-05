@@ -1,0 +1,2 @@
+# Terminal captures intentionally retain the final cells of each screen row.
+docs/ui-validation/*.txt whitespace=-blank-at-eol

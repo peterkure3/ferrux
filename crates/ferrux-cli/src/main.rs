@@ -5,7 +5,7 @@ use clap::{Parser, Subcommand};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::windows::named_pipe::{ClientOptions, NamedPipeClient};
 
-use ferrux_ipc::{read_message, write_message, Request, Response, PIPE_NAME};
+use ferrux_ipc::{pipe_name, read_message, write_message, Request, Response};
 
 #[derive(Parser)]
 #[command(name = "ferrux", about = "Ferrux terminal/workspace multiplexer")]
@@ -65,7 +65,16 @@ async fn run(cli: Cli) -> io::Result<()> {
             let cwd = std::env::current_dir()
                 .ok()
                 .map(|p| p.to_string_lossy().into_owned());
-            write_message(&mut client, &Request::SpawnPane { shell, cols, rows, cwd }).await?;
+            write_message(
+                &mut client,
+                &Request::SpawnPane {
+                    shell,
+                    cols,
+                    rows,
+                    cwd,
+                },
+            )
+            .await?;
             match read_message(&mut client).await? {
                 Response::PaneSpawned { id } => println!("pane {id} spawned"),
                 Response::Error { message } => eprintln!("error: {message}"),
@@ -197,7 +206,7 @@ async fn run_passthrough_loop(client: NamedPipeClient) -> io::Result<()> {
 async fn connect_or_spawn_daemon() -> io::Result<NamedPipeClient> {
     let mut spawned = false;
     for attempt in 0..10 {
-        match ClientOptions::new().open(PIPE_NAME) {
+        match ClientOptions::new().open(pipe_name()) {
             Ok(client) => return Ok(client),
             Err(_) if attempt == 0 && !spawned => {
                 spawn_daemon()?;

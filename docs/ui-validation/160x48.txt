@@ -1,0 +1,48 @@
+ ◆ Ferrux │ Workspace: review │ 2 Sessions                                                                                  ● Connected  ^B ? Help  ^B , Config 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ SESSIONS (2)              │┌ 1 powershell.exe ───────────────────────────────────── ● ACTIVE ┬ 2 cmd.exe ─────────────────────────────────────────────────────┐
+                           ││Windows PowerShell 5.1                                           │Microsoft Windows [Version 10.0.26200.9818]                     │
+ ▾ review                  ││Copyright (C) Microsoft Corporation. All rights reserved.        │(c) Microsoft Corporation. All rights reserved.                 │
+ > ● 1 powershell.exe      ││                                                                 │                                                                │
+   ● 2 cmd.exe             ││PS D:\Github\ferrux>                                             │D:\Github\ferrux>                                               │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+ ───────────────────────   ││                                                                 │                                                                │
+ WORKSPACE                 ││                                                                 │                                                                │
+ ▣ review                  ││                                                                 │                                                                │
+ branch: not a Git reposito││                                                                 │                                                                │
+ Git status unavailable    ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+ ACTIVITY                  ││                                                                 │                                                                │
+ ● 2 processes running     ││                                                                 │                                                                │
+ 0 agents detected         ││                                                                 │                                                                │
+ Approvals unavailable     ││                                                                 │                                                                │
+ Notifications unavailable ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           │└─────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────────┘
+ NORMAL  │ ^B v Split V │ ^B h Split H │ ^B x Close │ ^B s Save │ ^Q Detach │ ^O Focus │ ^B ? Help                                                           2P 

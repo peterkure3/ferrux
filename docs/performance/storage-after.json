@@ -1,0 +1,430 @@
+﻿{
+    "TimestampUtc":  "2026-11-04T15:10:58.1158381Z",
+    "TotalBytes":  18244964503,
+    "Accounting":  "Logical file lengths; parent/detail and extension rows overlap. Shared caches belong to all projects. NTFS hardlinks may be counted more than once.",
+    "TopLevel":  [
+                     {
+                         "Scope":  "source",
+                         "Path":  "D:\\Github\\ferrux",
+                         "Bytes":  320843,
+                         "Files":  115,
+                         "PercentOfMeasuredTotal":  0.0018
+                     },
+                     {
+                         "Scope":  "git",
+                         "Path":  "D:\\Github\\ferrux\\.git",
+                         "Bytes":  194845,
+                         "Files":  210,
+                         "PercentOfMeasuredTotal":  0.0011
+                     },
+                     {
+                         "Scope":  "target",
+                         "Path":  "D:\\Github\\ferrux\\target",
+                         "Bytes":  16692329948,
+                         "Files":  46288,
+                         "PercentOfMeasuredTotal":  91.4901
+                     },
+                     {
+                         "Scope":  "shared Cargo cache (not Ferrux-owned)",
+                         "Path":  "C:\\Users\\Peter Kure\\.cargo\\registry\\src",
+                         "Bytes":  1244077728,
+                         "Files":  40757,
+                         "PercentOfMeasuredTotal":  6.8187
+                     },
+                     {
+                         "Scope":  "shared Cargo cache (not Ferrux-owned)",
+                         "Path":  "C:\\Users\\Peter Kure\\.cargo\\registry\\cache",
+                         "Bytes":  224596670,
+                         "Files":  1255,
+                         "PercentOfMeasuredTotal":  1.231
+                     },
+                     {
+                         "Scope":  "shared Cargo cache (not Ferrux-owned)",
+                         "Path":  "C:\\Users\\Peter Kure\\.cargo\\registry\\index",
+                         "Bytes":  83444469,
+                         "Files":  1411,
+                         "PercentOfMeasuredTotal":  0.4574
+                     },
+                     {
+                         "Scope":  "shared Cargo cache (not Ferrux-owned)",
+                         "Path":  "C:\\Users\\Peter Kure\\.cargo\\git",
+                         "Bytes":  0,
+                         "Files":  0,
+                         "PercentOfMeasuredTotal":  0
+                     }
+                 ],
+    "Details":  [
+                    {
+                        "Scope":  "target child (overlaps target)",
+                        "Path":  "D:\\Github\\ferrux\\target\\debug",
+                        "Bytes":  7612210188,
+                        "Files":  21632,
+                        "PercentOfMeasuredTotal":  41.7223
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\debug\\deps",
+                        "Bytes":  4024979798,
+                        "Files":  2200,
+                        "PercentOfMeasuredTotal":  22.0608
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\debug\\incremental",
+                        "Bytes":  3319145044,
+                        "Files":  15544,
+                        "PercentOfMeasuredTotal":  18.1921
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\debug\\build",
+                        "Bytes":  97907767,
+                        "Files":  256,
+                        "PercentOfMeasuredTotal":  0.5366
+                    },
+                    {
+                        "Scope":  "target child (overlaps target)",
+                        "Path":  "D:\\Github\\ferrux\\target\\dist",
+                        "Bytes":  2041767,
+                        "Files":  2,
+                        "PercentOfMeasuredTotal":  0.0112
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\dist\\deps",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\dist\\incremental",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\dist\\build",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "target child (overlaps target)",
+                        "Path":  "D:\\Github\\ferrux\\target\\flycheck0",
+                        "Bytes":  144957,
+                        "Files":  2,
+                        "PercentOfMeasuredTotal":  0.0008
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\flycheck0\\deps",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\flycheck0\\incremental",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\flycheck0\\build",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "target child (overlaps target)",
+                        "Path":  "D:\\Github\\ferrux\\target\\performance",
+                        "Bytes":  8417729585,
+                        "Files":  23154,
+                        "PercentOfMeasuredTotal":  46.1373
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\performance\\deps",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\performance\\incremental",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\performance\\build",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "target child (overlaps target)",
+                        "Path":  "D:\\Github\\ferrux\\target\\release",
+                        "Bytes":  660191817,
+                        "Files":  1490,
+                        "PercentOfMeasuredTotal":  3.6185
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\release\\deps",
+                        "Bytes":  584422545,
+                        "Files":  516,
+                        "PercentOfMeasuredTotal":  3.2032
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\release\\incremental",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\release\\build",
+                        "Bytes":  65504931,
+                        "Files":  175,
+                        "PercentOfMeasuredTotal":  0.359
+                    },
+                    {
+                        "Scope":  "target child (overlaps target)",
+                        "Path":  "D:\\Github\\ferrux\\target\\script-tests",
+                        "Bytes":  10098,
+                        "Files":  6,
+                        "PercentOfMeasuredTotal":  0.0001
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\script-tests\\deps",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\script-tests\\incremental",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    },
+                    {
+                        "Scope":  "profile detail (overlaps parent)",
+                        "Path":  "D:\\Github\\ferrux\\target\\script-tests\\build",
+                        "Bytes":  0,
+                        "Files":  0,
+                        "PercentOfMeasuredTotal":  0
+                    }
+                ],
+    "Extensions":  [
+                       {
+                           "Extension":  ".rlib",
+                           "Bytes":  5688550602,
+                           "Files":  2099
+                       },
+                       {
+                           "Extension":  ".rmeta",
+                           "Bytes":  3809763572,
+                           "Files":  2790
+                       },
+                       {
+                           "Extension":  ".pdb",
+                           "Bytes":  2521333760,
+                           "Files":  882
+                       },
+                       {
+                           "Extension":  ".o",
+                           "Bytes":  2068997949,
+                           "Files":  19196
+                       },
+                       {
+                           "Extension":  ".bin",
+                           "Bytes":  1859319028,
+                           "Files":  1808
+                       },
+                       {
+                           "Extension":  ".dll",
+                           "Bytes":  387474432,
+                           "Files":  223
+                       },
+                       {
+                           "Extension":  ".exe",
+                           "Bytes":  327890944,
+                           "Files":  658
+                       },
+                       {
+                           "Extension":  ".d",
+                           "Bytes":  17401649,
+                           "Files":  3270
+                       },
+                       {
+                           "Extension":  ".json",
+                           "Bytes":  7780191,
+                           "Files":  3422
+                       },
+                       {
+                           "Extension":  ".zip",
+                           "Bytes":  2041767,
+                           "Files":  2
+                       },
+                       {
+                           "Extension":  ".lib",
+                           "Bytes":  541332,
+                           "Files":  223
+                       },
+                       {
+                           "Extension":  "",
+                           "Bytes":  502451,
+                           "Files":  7361
+                       },
+                       {
+                           "Extension":  ".exp",
+                           "Bytes":  286703,
+                           "Files":  223
+                       },
+                       {
+                           "Extension":  ".txt",
+                           "Bytes":  267982,
+                           "Files":  6
+                       },
+                       {
+                           "Extension":  ".timestamp",
+                           "Bytes":  163920,
+                           "Files":  3415
+                       },
+                       {
+                           "Extension":  ".ps1",
+                           "Bytes":  6477,
+                           "Files":  2
+                       },
+                       {
+                           "Extension":  ".rs",
+                           "Bytes":  4278,
+                           "Files":  41
+                       },
+                       {
+                           "Extension":  ".TAG",
+                           "Bytes":  1416,
+                           "Files":  8
+                       },
+                       {
+                           "Extension":  ".expr",
+                           "Bytes":  1339,
+                           "Files":  13
+                       },
+                       {
+                           "Extension":  ".toml",
+                           "Bytes":  143,
+                           "Files":  3
+                       },
+                       {
+                           "Extension":  ".lock",
+                           "Bytes":  13,
+                           "Files":  608
+                       },
+                       {
+                           "Extension":  ".cargo-lock",
+                           "Bytes":  0,
+                           "Files":  13
+                       },
+                       {
+                           "Extension":  ".cargo-build-lock",
+                           "Bytes":  0,
+                           "Files":  11
+                       },
+                       {
+                           "Extension":  ".cargo-artifact-lock",
+                           "Bytes":  0,
+                           "Files":  11
+                       }
+                   ],
+    "LargestFiles":  [
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\baseline\\debug\\deps\\libwindows-46a47f16e3d4106a.rlib",
+                             "Length":  138084258
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\debug\\deps\\libwindows-661b515190709ff1.rlib",
+                             "Length":  136679210
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\debug\\deps\\libwindows-b46dfabfc3834962.rlib",
+                             "Length":  136678850
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\debug\\deps\\libwindows-b7ad6c9991018eea.rlib",
+                             "Length":  136678674
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\baseline\\release\\deps\\libwindows-6b5111d49d4b5783.rlib",
+                             "Length":  112780072
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\baseline\\release\\deps\\libwindows-6b5111d49d4b5783.rmeta",
+                             "Length":  108662131
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\release\\deps\\libwindows-6e87235cacf8ecda.rlib",
+                             "Length":  106805918
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\release\\deps\\libwindows-6e87235cacf8ecda.rmeta",
+                             "Length":  102814182
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\baseline\\debug\\deps\\libwindows-46a47f16e3d4106a.rmeta",
+                             "Length":  93593442
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\debug\\deps\\libwindows-b7ad6c9991018eea.rmeta",
+                             "Length":  92258546
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\debug\\deps\\libwindows-b46dfabfc3834962.rmeta",
+                             "Length":  92258546
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\debug\\deps\\libwindows-661b515190709ff1.rmeta",
+                             "Length":  92258546
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\debug\\deps\\libwindows-168763321a7f99b3.rmeta",
+                             "Length":  73156422
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\debug\\deps\\libwindows-9698a755891c3af5.rmeta",
+                             "Length":  73156422
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\thin\\release\\deps\\libwindows-910f125d702c3d6f.rlib",
+                             "Length":  54063114
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\verified\\release\\deps\\libwindows-cf0521bf78f54776.rlib",
+                             "Length":  54062210
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\final\\release\\deps\\libwindows-cf0521bf78f54776.rlib",
+                             "Length":  54062210
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\fat\\release\\deps\\libwindows-cf0521bf78f54776.rlib",
+                             "Length":  54062210
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\optimized\\release\\deps\\libwindows-05c3b535c6a3b0b3.rlib",
+                             "Length":  53775768
+                         },
+                         {
+                             "FullName":  "D:\\Github\\ferrux\\target\\performance\\verified\\release\\deps\\libwindows-cf0521bf78f54776.rmeta",
+                             "Length":  52005927
+                         }
+                     ]
+}

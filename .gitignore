@@ -1,1 +1,4 @@
 /target
+*.pdb
+*.log
+/.cargo/config.local.toml

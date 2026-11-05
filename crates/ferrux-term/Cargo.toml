@@ -4,4 +4,4 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-vt100 = "0.16.2"
+vt100.workspace = true

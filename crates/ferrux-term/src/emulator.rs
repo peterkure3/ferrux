@@ -22,6 +22,11 @@ impl Emulator {
     pub fn set_size(&mut self, rows: u16, cols: u16) {
         self.parser.screen_mut().set_size(rows, cols);
     }
+
+    pub fn scroll(&mut self, lines: isize) {
+        let offset = self.screen().scrollback().saturating_add_signed(lines);
+        self.parser.screen_mut().set_scrollback(offset);
+    }
 }
 
 #[cfg(test)]
@@ -46,5 +51,18 @@ mod tests {
         let screen = emulator.screen();
         assert!(screen.cell(0, 0).unwrap().bold());
         assert!(!screen.cell(0, 4).unwrap().bold());
+    }
+
+    #[test]
+    fn bounded_scrollback_returns_to_live_screen_before_input() {
+        let mut emulator = Emulator::new(3, 20, 10);
+        for _ in 0..50 {
+            emulator.process(b"line\r\n");
+        }
+        emulator.scroll(100);
+        assert!(emulator.screen().scrollback() <= 10);
+        assert!(emulator.screen().scrollback() > 0);
+        emulator.scroll(isize::MIN);
+        assert_eq!(emulator.screen().scrollback(), 0);
     }
 }

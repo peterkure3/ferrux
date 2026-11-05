@@ -14,6 +14,9 @@ pub struct TomlSessionStore {
 
 impl TomlSessionStore {
     pub fn new() -> io::Result<Self> {
+        if let Some(directory) = std::env::var_os("FERRUX_SESSION_DIR") {
+            return Self::with_dir(PathBuf::from(directory));
+        }
         let home = directories::BaseDirs::new()
             .ok_or_else(|| io::Error::other("could not determine home directory"))?
             .home_dir()

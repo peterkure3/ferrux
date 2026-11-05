@@ -1,6 +1,6 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-use sysinfo::{Pid, ProcessesToUpdate, System};
+use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 
 use ferrux_core::domain::agent::AgentKind;
 use ferrux_core::ports::agent_detector::AgentDetector;
@@ -19,19 +19,45 @@ impl ProcessNameDetector {
     pub fn new() -> Self {
         Self
     }
+
+    /// Enumerate once for all panes. Agent classification needs only names
+    /// and parents, not CPU, command lines, environment or disk accounting.
+    pub fn detect_many(&self, roots: &[u32]) -> Vec<Option<AgentKind>> {
+        if roots.is_empty() {
+            return Vec::new();
+        }
+        let mut system = System::new();
+        system.refresh_processes_specifics(
+            ProcessesToUpdate::All,
+            true,
+            ProcessRefreshKind::nothing(),
+        );
+        let mut children: HashMap<Pid, Vec<Pid>> = HashMap::new();
+        for (pid, process) in system.processes() {
+            if let Some(parent) = process.parent() {
+                children.entry(parent).or_default().push(*pid);
+            }
+        }
+        roots
+            .iter()
+            .map(|root| detect_in(&system, &children, *root))
+            .collect()
+    }
 }
 
 impl AgentDetector for ProcessNameDetector {
     fn detect(&self, root_pid: u32) -> Option<AgentKind> {
-        let mut system = System::new();
-        system.refresh_processes(ProcessesToUpdate::All, true);
-        detect_in(&system, root_pid)
+        self.detect_many(&[root_pid])[0]
     }
 }
 
 /// Separated from `detect` so it can be unit-tested against a snapshot
 /// without depending on real OS process state.
-fn detect_in(system: &System, root_pid: u32) -> Option<AgentKind> {
+fn detect_in(
+    system: &System,
+    children: &HashMap<Pid, Vec<Pid>>,
+    root_pid: u32,
+) -> Option<AgentKind> {
     let root = Pid::from_u32(root_pid);
     let mut stack = vec![root];
     let mut visited = HashSet::new();
@@ -47,10 +73,8 @@ fn detect_in(system: &System, root_pid: u32) -> Option<AgentKind> {
                 }
             }
         }
-        for (child_pid, process) in system.processes() {
-            if process.parent() == Some(pid) {
-                stack.push(*child_pid);
-            }
+        if let Some(descendants) = children.get(&pid) {
+            stack.extend(descendants);
         }
     }
 

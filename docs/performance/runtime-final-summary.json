@@ -1,0 +1,16 @@
+﻿[
+    {
+        "Variant":  "baseline",
+        "ParseNs":  528856400,
+        "TextConstructionNs":  564388600,
+        "IpcSerializationNs":  11362700,
+        "CliHelpMs":  50.0263
+    },
+    {
+        "Variant":  "verified",
+        "ParseNs":  557671600,
+        "TextConstructionNs":  322695100,
+        "IpcSerializationNs":  12981700,
+        "CliHelpMs":  52.5049
+    }
+]

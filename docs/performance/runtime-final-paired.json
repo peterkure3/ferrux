@@ -1,0 +1,114 @@
+﻿[
+    {
+        "Variant":  "baseline",
+        "Sample":  0,
+        "ParseNs":  540318000,
+        "TextConstructionNs":  599999500,
+        "IpcSerializationNs":  11358600,
+        "CliHelpMs":  144.26090000000002
+    },
+    {
+        "Variant":  "verified",
+        "Sample":  0,
+        "ParseNs":  659350200,
+        "TextConstructionNs":  300099700,
+        "IpcSerializationNs":  9823700,
+        "CliHelpMs":  284.7215
+    },
+    {
+        "Variant":  "verified",
+        "Sample":  1,
+        "ParseNs":  557671600,
+        "TextConstructionNs":  322695100,
+        "IpcSerializationNs":  9491500,
+        "CliHelpMs":  49.3318
+    },
+    {
+        "Variant":  "baseline",
+        "Sample":  1,
+        "ParseNs":  528856400,
+        "TextConstructionNs":  537352300,
+        "IpcSerializationNs":  10306500,
+        "CliHelpMs":  50.0263
+    },
+    {
+        "Variant":  "baseline",
+        "Sample":  2,
+        "ParseNs":  461293600,
+        "TextConstructionNs":  557913900,
+        "IpcSerializationNs":  11945600,
+        "CliHelpMs":  44.2823
+    },
+    {
+        "Variant":  "verified",
+        "Sample":  2,
+        "ParseNs":  585103200,
+        "TextConstructionNs":  416936700,
+        "IpcSerializationNs":  16621600,
+        "CliHelpMs":  55.9161
+    },
+    {
+        "Variant":  "verified",
+        "Sample":  3,
+        "ParseNs":  524775800,
+        "TextConstructionNs":  286402100,
+        "IpcSerializationNs":  16742000,
+        "CliHelpMs":  47.128800000000005
+    },
+    {
+        "Variant":  "baseline",
+        "Sample":  3,
+        "ParseNs":  440281600,
+        "TextConstructionNs":  558476700,
+        "IpcSerializationNs":  11701700,
+        "CliHelpMs":  48.7047
+    },
+    {
+        "Variant":  "baseline",
+        "Sample":  4,
+        "ParseNs":  468004400,
+        "TextConstructionNs":  564388600,
+        "IpcSerializationNs":  11362700,
+        "CliHelpMs":  48.382200000000005
+    },
+    {
+        "Variant":  "verified",
+        "Sample":  4,
+        "ParseNs":  479908100,
+        "TextConstructionNs":  284692400,
+        "IpcSerializationNs":  9781600,
+        "CliHelpMs":  47.557
+    },
+    {
+        "Variant":  "verified",
+        "Sample":  5,
+        "ParseNs":  492376600,
+        "TextConstructionNs":  356640700,
+        "IpcSerializationNs":  15396000,
+        "CliHelpMs":  52.5049
+    },
+    {
+        "Variant":  "baseline",
+        "Sample":  5,
+        "ParseNs":  598148100,
+        "TextConstructionNs":  581702200,
+        "IpcSerializationNs":  9684300,
+        "CliHelpMs":  51.2571
+    },
+    {
+        "Variant":  "baseline",
+        "Sample":  6,
+        "ParseNs":  595218500,
+        "TextConstructionNs":  627812500,
+        "IpcSerializationNs":  18267100,
+        "CliHelpMs":  53.823600000000006
+    },
+    {
+        "Variant":  "verified",
+        "Sample":  6,
+        "ParseNs":  955772900,
+        "TextConstructionNs":  626377000,
+        "IpcSerializationNs":  12981700,
+        "CliHelpMs":  60.176500000000004
+    }
+]

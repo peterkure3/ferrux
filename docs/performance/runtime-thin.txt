@@ -1,0 +1,15 @@
+﻿parse_bytes=11010048,parse_ns=463476400
+render_frames=2000,render_ns=693142200
+ipc_roundtrips=10000,ipc_ns=10506500
+parse_bytes=11010048,parse_ns=386237500
+render_frames=2000,render_ns=658096900
+ipc_roundtrips=10000,ipc_ns=10514900
+parse_bytes=11010048,parse_ns=423079400
+render_frames=2000,render_ns=697403400
+ipc_roundtrips=10000,ipc_ns=7678400
+parse_bytes=11010048,parse_ns=307077000
+render_frames=2000,render_ns=626526900
+ipc_roundtrips=10000,ipc_ns=18756600
+parse_bytes=11010048,parse_ns=397620600
+render_frames=2000,render_ns=635308600
+ipc_roundtrips=10000,ipc_ns=8927600

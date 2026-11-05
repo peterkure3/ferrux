@@ -1,0 +1,154 @@
+﻿[
+    {
+        "Metric":  "daemon_ready_ms",
+        "Value":  754.9796
+    },
+    {
+        "Metric":  "panes_0_daemon_private_bytes",
+        "Value":  1933312
+    },
+    {
+        "Metric":  "panes_0_daemon_handles",
+        "Value":  118
+    },
+    {
+        "Metric":  "panes_0_idle_cpu_core_percent",
+        "Value":  0
+    },
+    {
+        "Metric":  "panes_0_list_mean_ms",
+        "Value":  1.738239
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  65.063200000000009
+    },
+    {
+        "Metric":  "panes_1_daemon_private_bytes",
+        "Value":  2772992
+    },
+    {
+        "Metric":  "panes_1_daemon_handles",
+        "Value":  131
+    },
+    {
+        "Metric":  "panes_1_idle_cpu_core_percent",
+        "Value":  5.208333333333333
+    },
+    {
+        "Metric":  "panes_1_list_mean_ms",
+        "Value":  1.8263580000000001
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  51.4135
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  75.93950000000001
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  173.29430000000002
+    },
+    {
+        "Metric":  "panes_4_daemon_private_bytes",
+        "Value":  3682304
+    },
+    {
+        "Metric":  "panes_4_daemon_handles",
+        "Value":  154
+    },
+    {
+        "Metric":  "panes_4_idle_cpu_core_percent",
+        "Value":  21.875
+    },
+    {
+        "Metric":  "panes_4_list_mean_ms",
+        "Value":  2.084734
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  55.438
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  67.2407
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  153.2602
+    },
+    {
+        "Metric":  "pane_spawn_ms",
+        "Value":  682.93760000000009
+    },
+    {
+        "Metric":  "panes_8_daemon_private_bytes",
+        "Value":  6094848
+    },
+    {
+        "Metric":  "panes_8_daemon_handles",
+        "Value":  272
+    },
+    {
+        "Metric":  "panes_8_idle_cpu_core_percent",
+        "Value":  41.666666666666664
+    },
+    {
+        "Metric":  "panes_8_list_mean_ms",
+        "Value":  2.6362150000000004
+    },
+    {
+        "Metric":  "resized_panes",
+        "Value":  8
+    },
+    {
+        "Metric":  "output_2000_lines_drain_ms",
+        "Value":  5802.0362000000005
+    },
+    {
+        "Metric":  "output_2000_lines_drain_ms",
+        "Value":  4.5811
+    },
+    {
+        "Metric":  "output_2000_lines_drain_ms",
+        "Value":  3.8596000000000004
+    },
+    {
+        "Metric":  "output_2000_lines_drain_ms",
+        "Value":  4.6033
+    },
+    {
+        "Metric":  "output_2000_lines_drain_ms",
+        "Value":  4.375
+    },
+    {
+        "Metric":  "output_2000_lines_drain_ms",
+        "Value":  7.2477
+    },
+    {
+        "Metric":  "output_2000_lines_drain_ms",
+        "Value":  5.1609
+    },
+    {
+        "Metric":  "output_2000_lines_drain_ms",
+        "Value":  5.1629000000000005
+    },
+    {
+        "Metric":  "detached_live_panes",
+        "Value":  8
+    },
+    {
+        "Metric":  "reattach_response_ms",
+        "Value":  95.7663
+    },
+    {
+        "Metric":  "cmd_unicode_roundtrip",
+        "Value":  1
+    },
+    {
+        "Metric":  "rapid_create_kill_cycles",
+        "Value":  5
+    }
+]

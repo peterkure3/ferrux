@@ -1,7 +1,9 @@
 use std::io::{self, Write};
 use std::sync::{Arc, Mutex};
 
-use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize as PortablePtySize};
+use portable_pty::{
+    native_pty_system, Child, CommandBuilder, MasterPty, PtySize as PortablePtySize,
+};
 
 use ferrux_core::ports::pty_backend::{PtyBackend, PtySize};
 
@@ -44,12 +46,13 @@ impl PtyBackend for ConPtyBackend {
         if let Some(cwd) = cwd {
             cmd_builder.cwd(cwd);
         }
+        // Obtain fallible I/O resources before spawning: a writer setup
+        // failure must not leave a successfully spawned shell orphaned.
+        let writer = pair.master.take_writer().map_err(to_io_error)?;
         let child = pair.slave.spawn_command(cmd_builder).map_err(to_io_error)?;
         // Slave end is only needed to spawn the child; drop it so EOF
         // propagates correctly once the child exits.
         drop(pair.slave);
-
-        let writer = pair.master.take_writer().map_err(to_io_error)?;
 
         Ok(PtyHandle {
             child: Arc::new(Mutex::new(child)),

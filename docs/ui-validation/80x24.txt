@@ -1,0 +1,24 @@
+ ◆ Ferrux │ Workspace: review │ main │ 2 Sessions                   ● Connected 
+────────────────────────────────────────────────────────────────────────────────
+ SESSIONS (2)           │┌ 1 powershell.ex ● ACTIVE ┬ 2 cmd.exe ───────────────┐
+                        ││rporation. All rights rese│Microsoft Windows [Version│
+ ▾ review               ││rved.                     │ 10.0.26200.9818]         │
+ > ● 1 powershell.exe   ││                          │(c) Microsoft Corporation.│
+   ● 2 cmd.exe          ││PS D:\Github\ferrux> Write│ All rights reserved.     │
+                        ││-Output ('FERRUX_'+'INPUT_│                          │
+                        ││OK')                      │D:\Github\ferrux>echo FERR│
+ ───────────────────────││Error reading or writing h│UX_CMD_%OS%               │
+ WORKSPACE              ││istory file 'C:\Users\Pete│FERRUX_CMD_Windows_NT     │
+ ▣ ferrux               ││r Kure\AppData\Roaming\Mic│                          │
+ branch: main           ││rosoft\Windows\PowerShell\│D:\Github\ferrux>         │
+ ! working tree modified││PSReadLine\ConsoleHost_his│                          │
+                        ││tory.txt': Access to the p│                          │
+ ACTIVITY               ││ath 'C:\Users\Peter Kure\A│                          │
+ ● 2 processes running  ││ppData\Roaming\Microsoft\W│                          │
+ 0 agents detected      ││indows\PowerShell\PSReadLi│                          │
+ Approvals unavailable  ││ne\ConsoleHost_history.txt│                          │
+ Notifications unavailab││' is denied.              │                          │
+                        ││ưmFERRUX_INPUT_OK         │                          │
+                        ││PS D:\Github\ferrux>      │                          │
+                        │└──────────────────────────┴──────────────────────────┘
+ NORMAL  │ ^Q out │ ^B ? help │ ^B v V │ ^B h H │ ^O next │ ^B s save           
