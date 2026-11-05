@@ -80,7 +80,9 @@ try {
     }
 }
 
-& (Join-Path $InstallDirectory 'ferrux.exe') --version
+$installedCli = Join-Path $InstallDirectory 'ferrux.exe'
+& $installedCli --help
+if ($LASTEXITCODE -ne 0) { throw "Installed Ferrux help check failed with exit code $LASTEXITCODE." }
 } catch {
     $errorLog = Join-Path (Split-Path $PSScriptRoot -Parent) 'target/local-install-error.txt'
     $_ | Out-File -LiteralPath $errorLog -Encoding utf8
