@@ -102,6 +102,9 @@ The installer archive contains only `ferrux.exe` and `ferrux-daemon.exe`.
 `package-release.ps1` writes a separate symbols archive when PDBs are present.
 The installer asset name and upgrade workflow are preserved.
 
+To update an existing Program Files installation from a local release build,
+run `./scripts/update-local-install.ps1` in an Administrator PowerShell window.
+
 Inspect storage before cleaning anything:
 
 ```powershell
