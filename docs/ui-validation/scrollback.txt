@@ -1,0 +1,48 @@
+ ◆ Ferrux │ Workspace: review │ main │ 2 Sessions                                                                           ● Connected  ^B ? Help  ^B , Config 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ SESSIONS (2)              │┌ 1 [SCROLL +45] powershell.exe ──────────────────────── ● ACTIVE ┬ 2 cmd.exe ─────────────────────────────────────────────────────┐
+                           ││FX_HISTORY_004                                                   │Microsoft Windows [Version 10.0.26200.9818]                     │
+ ▾ review                  ││FX_HISTORY_005                                                   │(c) Microsoft Corporation. All rights reserved.                 │
+ > ● 1 powershell.exe      ││FX_HISTORY_006                                                   │                                                                │
+   ● 2 cmd.exe             ││FX_HISTORY_007                                                   │D:\Github\ferrux>echo FERRUX_CMD_%OS%                           │
+                           ││FX_HISTORY_008                                                   │FERRUX_CMD_Windows_NT                                           │
+                           ││FX_HISTORY_009                                                   │                                                                │
+                           ││FX_HISTORY_010                                                   │D:\Github\ferrux>                                               │
+                           ││FX_HISTORY_011                                                   │                                                                │
+                           ││FX_HISTORY_012                                                   │                                                                │
+                           ││FX_HISTORY_013                                                   │                                                                │
+                           ││FX_HISTORY_014                                                   │                                                                │
+                           ││FX_HISTORY_015                                                   │                                                                │
+                           ││FX_HISTORY_016                                                   │                                                                │
+                           ││FX_HISTORY_017                                                   │                                                                │
+                           ││FX_HISTORY_018                                                   │                                                                │
+                           ││FX_HISTORY_019                                                   │                                                                │
+                           ││FX_HISTORY_020                                                   │                                                                │
+                           ││FX_HISTORY_021                                                   │                                                                │
+                           ││FX_HISTORY_022                                                   │                                                                │
+                           ││FX_HISTORY_023                                                   │                                                                │
+                           ││FX_HISTORY_024                                                   │                                                                │
+                           ││FX_HISTORY_025                                                   │                                                                │
+                           ││FX_HISTORY_026                                                   │                                                                │
+                           ││FX_HISTORY_027                                                   │                                                                │
+                           ││FX_HISTORY_028                                                   │                                                                │
+                           ││FX_HISTORY_029                                                   │                                                                │
+                           ││FX_HISTORY_030                                                   │                                                                │
+                           ││FX_HISTORY_031                                                   │                                                                │
+                           ││FX_HISTORY_032                                                   │                                                                │
+                           ││FX_HISTORY_033                                                   │                                                                │
+ ───────────────────────   ││FX_HISTORY_034                                                   │                                                                │
+ WORKSPACE                 ││FX_HISTORY_035                                                   │                                                                │
+ ▣ ferrux                  ││FX_HISTORY_036                                                   │                                                                │
+ branch: main              ││FX_HISTORY_037                                                   │                                                                │
+ ! working tree modified   ││FX_HISTORY_038                                                   │                                                                │
+                           ││FX_HISTORY_039                                                   │                                                                │
+ ACTIVITY                  ││FX_HISTORY_040                                                   │                                                                │
+ ● 2 processes running     ││FX_HISTORY_041                                                   │                                                                │
+ 0 agents detected         ││FX_HISTORY_042                                                   │                                                                │
+ Approvals unavailable     ││FX_HISTORY_043                                                   │                                                                │
+ Notifications unavailable ││FX_HISTORY_044                                                   │                                                                │
+                           ││FX_HISTORY_045                                                   │                                                                │
+                           ││FX_HISTORY_046                                                   │                                                                │
+                           │└─────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────────┘
+ NORMAL  │ ^B v Split V │ ^B h Split H │ ^B x Close │ ^B s Save │ ^Q Detach │ ^O Focus │ ^B ? Help                                                           2P 

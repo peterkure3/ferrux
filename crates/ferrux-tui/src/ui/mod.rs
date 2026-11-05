@@ -257,6 +257,9 @@ fn render_overlay(frame: &mut Frame<'_>, state: &UiState) {
                 "Ctrl+B then w       Open a saved workspace".into(),
                 "Ctrl+B then ? / ,   Help / configuration".into(),
                 "Mouse wheel         Scroll terminal / session list".into(),
+                "Shift+PgUp/PgDn     Scroll pane history by page".into(),
+                "Shift+Home/End      Oldest history / live output".into(),
+                "Shift+wheel         Force local pane scrollback".into(),
                 "Ctrl+Q              Detach; shells keep running".into(),
                 "Esc                 Close this overlay".into(),
             ],
@@ -268,7 +271,10 @@ fn render_overlay(frame: &mut Frame<'_>, state: &UiState) {
                 format!("Color mode: {:?}", theme.mode),
                 "FERRUX_COLOR_MODE=rgb | 256 | mono".into(),
                 "NO_COLOR disables UI color accents".into(),
-                "Scrollback: 1,000 lines per terminal".into(),
+                format!(
+                    "Scrollback: {} lines per terminal",
+                    crate::pane_session::scrollback_lines()
+                ),
                 "Child ANSI colors are preserved".into(),
                 format!(
                     "Sidebar: {}",

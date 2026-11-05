@@ -51,7 +51,13 @@ pane borders and a responsive sidebar. `Ctrl+B` then `?` opens help, `,` shows
 theme settings, `b` toggles the sidebar, `Tab` enters keyboard session navigation,
 and `w` selects a saved workspace layout. In session navigation use arrows and
 Enter/Esc; `j`/`k` after the prefix also change focus. The mouse wheel scrolls the
-hovered terminal or session list. `Ctrl+S` continues to reach the child application;
+hovered terminal or session list. Applications requesting mouse reporting or
+alternate-screen scrolling receive wheel input within their pane. Hold Shift
+while using the wheel to force Ferrux's local history. Shift+PageUp/PageDown
+browses history; Shift+Home/End selects oldest history/live output. Ctrl+B then
+PageUp/PageDown/Home/End provides equivalent local controls. Plain PageUp/PageDown
+reaches the child. A `[SCROLL +N]` title indicates older output; typing returns
+to live output. `Ctrl+S` continues to reach the child application;
 saving uses `Ctrl+B` then `s`.
 
 UI color can be overridden with `$env:FERRUX_COLOR_MODE='rgb'`, `'256'` or `'mono'`;
@@ -59,6 +65,12 @@ UI color can be overridden with `$env:FERRUX_COLOR_MODE='rgb'`, `'256'` or `'mon
 unchanged. Git metadata is read in the background. Unsupported approvals and
 notification counts are shown as unavailable. See the
 [UI implementation and validation report](docs/ui-validation/README.md).
+
+Pane history retains up to 10,000 lines by default. Set
+`$env:FERRUX_SCROLLBACK_LINES='25000'` before launching to change the limit
+(maximum 100,000; zero disables history). History belongs to the attached UI and
+is bounded, not a permanent conversation log. Scrolling also works in
+`ferrux view <id>`. See [scrolling validation](docs/ui-validation/scrolling.md).
 
 ## Build and development
 

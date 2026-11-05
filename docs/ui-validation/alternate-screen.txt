@@ -1,0 +1,48 @@
+ ◆ Ferrux │ Workspace: review │ main │ 2 Sessions                                                                           ● Connected  ^B ? Help  ^B , Config 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ SESSIONS (2)              │┌ 1 powershell.exe ───────────────────────────────────── ● ACTIVE ┬ 2 cmd.exe ─────────────────────────────────────────────────────┐
+                           ││ALT_SCROLL_READY                                                 │Microsoft Windows [Version 10.0.26200.9818]                     │
+ ▾ review                  ││                                                                 │(c) Microsoft Corporation. All rights reserved.                 │
+ > ● 1 powershell.exe      ││                                                                 │                                                                │
+   ● 2 cmd.exe             ││                                                                 │D:\Github\ferrux>echo FERRUX_CMD_%OS%                           │
+                           ││                                                                 │FERRUX_CMD_Windows_NT                                           │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │D:\Github\ferrux>                                               │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+ ───────────────────────   ││                                                                 │                                                                │
+ WORKSPACE                 ││                                                                 │                                                                │
+ ▣ ferrux                  ││                                                                 │                                                                │
+ branch: main              ││                                                                 │                                                                │
+ ! working tree modified   ││                                                                 │                                                                │
+                           ││                                                                 │                                                                │
+ ACTIVITY                  ││                                                                 │                                                                │
+ ● 2 processes running     ││                                                                 │                                                                │
+ 0 agents detected         ││                                      UpArrow') { throw 'expected│                                                                │
+ Approvals unavailable     ││ UpArrow' } }; [Console]::Write('ALT_WHEEL_OK'); [void][Console]:│                                                                │
+ Notifications unavailable ││:ReadKey($true) } finally { [Console]::Write("$e[?1007l$e[?1049l"│                                                                │
+                           ││) }                                                              │                                                                │
+                           ││                                                                 │                                                                │
+                           │└─────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────────┘
+ NORMAL  │ ^B v Split V │ ^B h Split H │ ^B x Close │ ^B s Save │ ^Q Detach │ ^O Focus │ ^B ? Help                                                           2P 

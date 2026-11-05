@@ -158,6 +158,44 @@ shell = "cmd.exe"
         wait_for(&screen, "PowerShell input routing", |text| {
             text.contains("FERRUX_INPUT_OK")
         })?;
+        writer.write_all(b"0..89 | ForEach-Object { 'FX_HISTORY_{0:D3}' -f $_ }; Write-Output ('FX_'+'HISTORY_DONE')\r")?;
+        wait_for(&screen, "long output", |text| {
+            text.contains("FX_HISTORY_DONE")
+        })?;
+        for _ in 0..20 {
+            writer.write_all(b"\x1b[<64;35;8M")?;
+        }
+        let history = wait_for(&screen, "mouse scrollback", |text| {
+            text.contains("SCROLL +") && text.contains("FX_HISTORY_010")
+        })?;
+        fs::write(output.join("scrollback.txt"), history)?;
+        writer.write_all(b"\x1b[1;2F")?; // Shift+End returns to live output.
+        wait_for(&screen, "return to live", |text| {
+            !text.contains("SCROLL +") && text.contains("FX_HISTORY_DONE")
+        })?;
+        writer.write_all(b"\x1b[5;2~")?;
+        wait_for(&screen, "keyboard scrollback", |text| {
+            text.contains("SCROLL +")
+        })?;
+        writer.write_all(b"\r")?;
+        wait_for(&screen, "typing returns to live", |text| {
+            !text.contains("SCROLL +") && text.contains("FX_HISTORY_DONE")
+        })?;
+        // Exercise the alternate-scroll protocol used by fullscreen TUIs.
+        writer.write_all(br#"$e=[char]27; [Console]::Write("$e[?1049h$e[?1007h$e[2J$e[HALT_SCROLL_READY"); try { 1..3 | ForEach-Object { if ([Console]::ReadKey($true).Key -ne 'UpArrow') { throw 'expected UpArrow' } }; [Console]::Write('ALT_WHEEL_OK'); [void][Console]::ReadKey($true) } finally { [Console]::Write("$e[?1007l$e[?1049l") }"#)?;
+        writer.write_all(b"\r")?;
+        wait_for(&screen, "alternate screen startup", |text| {
+            text.contains("ALT_SCROLL_READY") && !text.contains("FX_HISTORY_DONE")
+        })?;
+        writer.write_all(b"\x1b[<64;35;8M")?;
+        let alternate = wait_for(&screen, "alternate screen wheel routing", |text| {
+            text.contains("ALT_WHEEL_OK")
+        })?;
+        fs::write(output.join("alternate-screen.txt"), alternate)?;
+        writer.write_all(b"\r")?;
+        wait_for(&screen, "alternate screen exit", |text| {
+            text.contains("FX_HISTORY_DONE")
+        })?;
         writer.write_all(b"\x1b[<0;5;7M\x1b[<0;5;7m")?;
         wait_for(&screen, "sidebar mouse selection", |text| {
             text.lines().nth(2).is_some_and(|line| {
@@ -227,6 +265,6 @@ shell = "cmd.exe"
         detached_count, 2,
         "detach must preserve the two shell processes"
     );
-    println!("PASS: real ConPTY UI, mouse/keyboard/sidebar focus, PowerShell/CMD input, help, save, split/close, four sizes, detach preserves 2 shells");
+    println!("PASS: real ConPTY UI, mouse/keyboard scrollback, alternate-screen wheel routing, return to live, focus, PowerShell/CMD input, help, save, split/close, four sizes, detach preserves 2 shells");
     Ok(())
 }

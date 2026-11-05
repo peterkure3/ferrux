@@ -26,7 +26,6 @@ use crate::pane_session::{self, PaneSession};
 use crate::session_store::TomlSessionStore;
 use crate::widgets::{pane_view, sidebar};
 
-const SCROLLBACK_LINES: usize = 1000;
 // powershell.exe (Windows PowerShell) ships with every Windows install,
 // unlike pwsh.exe (PowerShell 7+, an optional download) — safe default.
 const DEFAULT_SHELL: &str = "powershell.exe";
@@ -103,14 +102,16 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
     let emulator = std::sync::Arc::new(std::sync::Mutex::new(Emulator::new(
         rows,
         cols,
-        SCROLLBACK_LINES,
+        pane_session::scrollback_lines(),
     )));
 
     crossterm::terminal::enable_raw_mode()?;
     let _terminal_mode = TerminalMode {
-        mouse_capture: false,
+        mouse_capture: true,
     };
-    io::stdout().execute(EnterAlternateScreen)?;
+    io::stdout()
+        .execute(EnterAlternateScreen)?
+        .execute(EnableMouseCapture)?;
     let backend = CrosstermBackend::new(io::stdout());
     let mut terminal = Terminal::new(backend)?;
 
@@ -124,7 +125,9 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
         let emulator = emulator.lock().unwrap();
         let screen = emulator.screen();
         let text = pane_view::render_screen_themed(screen, theme);
-        let cursor = pane_view::cursor_position(screen);
+        let cursor = (screen.scrollback() == 0)
+            .then(|| pane_view::cursor_position(screen))
+            .flatten();
         terminal.draw(|frame| {
             frame.render_widget(Paragraph::new(text).style(theme.base()), frame.area());
             if let Some((x, y)) = cursor {
@@ -161,12 +164,27 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
                     }
                     Some(Event::Key(key)) => match keymap::translate(key, false) {
                         Some(Action::Bytes(bytes)) => {
+                            emulator.lock().unwrap().scroll(isize::MIN);
                             if pipe_write.write_all(&bytes).await.is_err() {
                                 break Ok(());
                             }
+                            dirty = true;
                         }
-                        _ => break Ok(()),
+                        Some(Action::Detach) => break Ok(()),
+                        Some(Action::ScrollPage(direction)) => {
+                            let mut emulator = emulator.lock().unwrap();
+                            scroll_page(&mut emulator, direction);
+                            dirty = true;
+                        }
+                        Some(Action::ScrollTop) => { emulator.lock().unwrap().scroll(isize::MAX); dirty=true; }
+                        Some(Action::ScrollBottom) => { emulator.lock().unwrap().scroll(isize::MIN); dirty=true; }
+                        _ => {},
                     },
+                    Some(Event::Mouse(event)) if matches!(event.kind, MouseEventKind::ScrollUp | MouseEventKind::ScrollDown) => {
+                        let bytes = emulator.lock().unwrap().wheel(event.kind == MouseEventKind::ScrollUp, event.column, event.row, event.modifiers.contains(crossterm::event::KeyModifiers::SHIFT));
+                        if let Some(bytes) = bytes { pipe_write.write_all(&bytes).await?; }
+                        dirty = true;
+                    }
                     Some(_) => {},
                     None => break Ok(()),
                 }
@@ -254,7 +272,9 @@ pub async fn run(name: String, default_shell: String) -> io::Result<()> {
                                     let mut target=focused;
                                     let click=crossterm::event::MouseEvent{kind:MouseEventKind::Down(MouseButton::Left),..event};
                                     if mouse::focus_clicked_pane(click,workspace.root.as_ref().unwrap(),main_area,&mut target) {
-                                        if let Some(session)=target.and_then(|id|sessions.get(&id)) {session.emulator.lock().unwrap().scroll(if up{3}else{-3});dirty=true;}
+                                        if let Some(pane)=layout::panes(workspace.root.as_ref().unwrap(),main_area).into_iter().find(|pane|Some(pane.pane)==target) {
+                                            if let Some(session)=sessions.get(&pane.pane) {scroll_wheel(session,event,layout::viewport(pane.rect)).await?;dirty=true;}
+                                        }
                                     }
                                 }
                             }
@@ -317,6 +337,11 @@ pub async fn run(name: String, default_shell: String) -> io::Result<()> {
                             }
                             Some(Action::FocusNext)=>{focus_next(&workspace,&mut focused);state.follow_focus=true;}
                             Some(Action::FocusPrevious)=>{focus_previous(&workspace,&mut focused);state.follow_focus=true;}
+                            Some(Action::ScrollPage(direction))=>{
+                                if let Some(session)=focused.and_then(|id|sessions.get(&id)) {scroll_page(&mut session.emulator.lock().unwrap(),direction);}
+                            }
+                            Some(Action::ScrollTop)=>{if let Some(session)=focused.and_then(|id|sessions.get(&id)) {session.emulator.lock().unwrap().scroll(isize::MAX);}}
+                            Some(Action::ScrollBottom)=>{if let Some(session)=focused.and_then(|id|sessions.get(&id)) {session.emulator.lock().unwrap().scroll(isize::MIN);}}
                             Some(Action::ToggleSidebar)=>{
                                 state.sidebar_visible= !state.sidebar_visible;
                                 main_area=layout::shell(terminal_area,state.sidebar_visible).panes;
@@ -539,6 +564,37 @@ async fn do_close(
     }
 }
 
+fn scroll_page(emulator: &mut Emulator, direction: isize) {
+    let rows = isize::try_from(emulator.screen().size().0.saturating_sub(1).max(1)).unwrap();
+    emulator.scroll(direction * rows);
+}
+
+async fn scroll_wheel(
+    session: &PaneSession,
+    event: crossterm::event::MouseEvent,
+    viewport: ratatui::layout::Rect,
+) -> io::Result<()> {
+    if !viewport.contains((event.column, event.row).into()) {
+        return Ok(());
+    }
+    let bytes = session.emulator.lock().unwrap().wheel(
+        event.kind == MouseEventKind::ScrollUp,
+        event.column - viewport.x,
+        event.row - viewport.y,
+        event
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::SHIFT),
+    );
+    if let Some(bytes) = bytes {
+        session
+            .write_tx
+            .send(bytes)
+            .await
+            .map_err(|_| io::Error::new(io::ErrorKind::BrokenPipe, "pane input closed"))?;
+    }
+    Ok(())
+}
+
 fn focus_next(workspace: &Workspace, focused: &mut Option<PaneId>) {
     let Some(root) = &workspace.root else {
         *focused = None;
@@ -599,7 +655,16 @@ fn draw(
                 let emulator = session.emulator.lock().unwrap();
                 let screen = emulator.screen();
                 let shell = workspace.shell_for(pane.pane).unwrap_or(DEFAULT_SHELL);
-                let title = format!(" {} {} ", pane.pane.0, crate::ui::shell_label(shell));
+                let title = format!(
+                    " {} {}{} ",
+                    pane.pane.0,
+                    if screen.scrollback() > 0 {
+                        format!("[SCROLL +{}] ", screen.scrollback())
+                    } else {
+                        String::new()
+                    },
+                    crate::ui::shell_label(shell)
+                );
                 let selected = focused == Some(pane.pane);
                 pane_view::draw_panel(frame, pane.rect, screen, &title, selected, theme);
                 if selected && screen.scrollback() == 0 {

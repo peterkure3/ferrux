@@ -1,0 +1,6 @@
+﻿   Compiling ferrux-term v0.1.2 (D:\Github\ferrux\crates\ferrux-term)
+   Compiling ferrux-tui v0.1.2 (D:\Github\ferrux\crates\ferrux-tui)
+   Compiling ferrux-cli v0.1.2 (D:\Github\ferrux\crates\ferrux-cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.77s
+     Running `target\debug\examples\windows_ui_smoke.exe target/release target/ui-scroll-smoke`
+PASS: real ConPTY UI, mouse/keyboard scrollback, alternate-screen wheel routing, return to live, focus, PowerShell/CMD input, help, save, split/close, four sizes, detach preserves 2 shells

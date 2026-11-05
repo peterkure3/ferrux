@@ -9,7 +9,13 @@ use ferrux_term::Emulator;
 
 use crate::daemon_client::connect_with_retry;
 
-const SCROLLBACK_LINES: usize = 1000;
+pub(crate) fn scrollback_lines() -> usize {
+    std::env::var("FERRUX_SCROLLBACK_LINES")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(10_000)
+        .min(100_000)
+}
 
 /// A live attach to one daemon-owned pane: an emulator kept in sync with
 /// its output, and a channel to send it input.
@@ -65,7 +71,7 @@ pub async fn attach(
         other => return Err(io::Error::other(format!("unexpected response: {other:?}"))),
     }
 
-    let emulator = Arc::new(Mutex::new(Emulator::new(rows, cols, SCROLLBACK_LINES)));
+    let emulator = Arc::new(Mutex::new(Emulator::new(rows, cols, scrollback_lines())));
     let (mut read_half, mut write_half) = tokio::io::split(client);
 
     let emulator_for_task = emulator.clone();

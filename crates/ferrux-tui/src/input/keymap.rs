@@ -21,6 +21,9 @@ pub enum Action {
     Help,
     Config,
     Workspaces,
+    ScrollPage(isize),
+    ScrollTop,
+    ScrollBottom,
 }
 
 /// Translates a crossterm key event into an `Action`.
@@ -51,10 +54,24 @@ pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
             KeyCode::Char('?') => Some(Action::Help),
             KeyCode::Char(',') => Some(Action::Config),
             KeyCode::Char('w') => Some(Action::Workspaces),
+            KeyCode::PageUp => Some(Action::ScrollPage(1)),
+            KeyCode::PageDown => Some(Action::ScrollPage(-1)),
+            KeyCode::Home => Some(Action::ScrollTop),
+            KeyCode::End => Some(Action::ScrollBottom),
             // Unrecognized prefix combo: swallow it rather than leaking a
             // stray keystroke into the pane.
             _ => None,
         };
+    }
+
+    if event.modifiers.contains(KeyModifiers::SHIFT) {
+        match event.code {
+            KeyCode::PageUp => return Some(Action::ScrollPage(1)),
+            KeyCode::PageDown => return Some(Action::ScrollPage(-1)),
+            KeyCode::Home => return Some(Action::ScrollTop),
+            KeyCode::End => return Some(Action::ScrollBottom),
+            _ => {}
+        }
     }
 
     if event.code == KeyCode::Char('b') && event.modifiers.contains(KeyModifiers::CONTROL) {
@@ -88,6 +105,8 @@ pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
         KeyCode::Home => b"\x1b[H".to_vec(),
         KeyCode::End => b"\x1b[F".to_vec(),
         KeyCode::Delete => b"\x1b[3~".to_vec(),
+        KeyCode::PageUp => b"\x1b[5~".to_vec(),
+        KeyCode::PageDown => b"\x1b[6~".to_vec(),
         _ => return None,
     };
 
@@ -97,6 +116,27 @@ pub fn translate(event: KeyEvent, awaiting_prefix: bool) -> Option<Action> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn page_keys_reach_apps_unless_local_history_is_requested() {
+        assert!(
+            matches!(translate(KeyEvent::new(KeyCode::PageUp,KeyModifiers::NONE),false),Some(Action::Bytes(bytes)) if bytes==b"\x1b[5~")
+        );
+        assert!(
+            matches!(translate(KeyEvent::new(KeyCode::PageDown,KeyModifiers::NONE),false),Some(Action::Bytes(bytes)) if bytes==b"\x1b[6~")
+        );
+        assert!(matches!(
+            translate(KeyEvent::new(KeyCode::PageUp, KeyModifiers::SHIFT), false),
+            Some(Action::ScrollPage(1))
+        ));
+        assert!(matches!(
+            translate(KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE), true),
+            Some(Action::ScrollPage(-1))
+        ));
+        assert!(matches!(
+            translate(KeyEvent::new(KeyCode::End, KeyModifiers::SHIFT), false),
+            Some(Action::ScrollBottom)
+        ));
+    }
     #[test]
     fn ui_extensions_only_consume_prefix_commands() {
         for character in ['j', 'k', 'b', 'w', '?', ',', 's'] {

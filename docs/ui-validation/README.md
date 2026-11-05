@@ -36,7 +36,8 @@ Git branch, repository and dirty state run off the UI thread, refreshed every
 five seconds. Daemon lifecycle/agent snapshots run separately with a timeout and
 two-second polling. Only changed snapshots trigger redraws. Existing bounded
 output notifications coalesce redraws with a 16 ms frame limit; there is no
-continuous idle render loop. Scrollback remains bounded to 1,000 lines per pane.
+continuous idle render loop. The subsequent [scrolling update](scrolling.md) adds
+application wheel routing and configurable history with a 10,000-line default.
 
 `PaneInfo.running` is additive and optional, allowing old daemons to report
 unknown lifecycle status instead of fabricated running state. Default local pipe
@@ -128,5 +129,5 @@ their format and existing restore behavior: reopening a saved layout respawns
 shells with remapped daemon IDs. The picker preserves detached daemon processes,
 but does not introduce live workspace reattachment or command-history restoration.
 Old daemons without lifecycle metadata display unknown process state until an
-updated daemon is used. Child ANSI mouse reporting is not forwarded: captured
-mouse input belongs to Ferrux focus/scroll controls, as in the existing design.
+updated daemon is used. The subsequent [scrolling update](scrolling.md) forwards
+wheel events requested by children; clicks still focus Ferrux panes.
