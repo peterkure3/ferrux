@@ -47,6 +47,8 @@ enum Commands {
     },
     /// List saved workspace names.
     Workspaces,
+    /// Download and install the latest Ferrux release from GitHub.
+    Update,
 }
 
 #[tokio::main]
@@ -133,6 +135,7 @@ async fn run(cli: Cli) -> io::Result<()> {
             }
             Ok(())
         }
+        Commands::Update => start_update(),
         Commands::Attach { id } => {
             let mut client = connect_or_spawn_daemon().await?;
             write_message(&mut client, &Request::AttachPane { id }).await?;
@@ -147,6 +150,46 @@ async fn run(cli: Cli) -> io::Result<()> {
                     Ok(())
                 }
             }
+        }
+    }
+}
+
+/// Start the embedded Windows updater. It elevates itself when needed and
+/// waits for this CLI process to exit before replacing the installed files.
+fn start_update() -> io::Result<()> {
+    let install_dir = std::env::current_exe()?
+        .parent()
+        .ok_or_else(|| io::Error::other("could not determine Ferrux install directory"))?
+        .to_path_buf();
+    let script_path = std::env::temp_dir().join(format!(
+        "ferrux-update-{}-{}.ps1",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    ));
+    std::fs::write(&script_path, include_str!("update.ps1"))?;
+
+    let result = std::process::Command::new("powershell.exe")
+        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
+        .arg(&script_path)
+        .arg("-InstallDir")
+        .arg(&install_dir)
+        .arg("-ParentPid")
+        .arg(std::process::id().to_string())
+        .arg("-CurrentVersion")
+        .arg(env!("CARGO_PKG_VERSION"))
+        .spawn();
+
+    match result {
+        Ok(_) => {
+            println!("Ferrux updater started. Follow the PowerShell window to finish.");
+            Ok(())
+        }
+        Err(error) => {
+            let _ = std::fs::remove_file(script_path);
+            Err(error)
         }
     }
 }

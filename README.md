@@ -39,6 +39,13 @@ correctly from a fresh shell all confirmed working.
 - `ferrux kill-pane <id>` — kill a pane
 - `ferrux workspaces` — list saved workspaces
 
+Run `ferrux update` to download and install the latest GitHub release. It uses
+the same Windows archive as the installer and requests administrator access
+when needed. Close Ferrux's UI and daemon first; the updater leaves running
+sessions alone and refuses to replace binaries while either process is active.
+It only installs a newer published release, so updates require a versioned
+GitHub release containing the Windows package.
+
 Inside `ferrux open`: `Ctrl+O` to cycle focus, `Ctrl+B` then `v`/`h` to
 split vertical/horizontal, `x` to close the focused pane, `s` to save
 the workspace, `Ctrl+Q` to detach. Left-click inside a pane or on its border
