@@ -8,7 +8,6 @@ use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::ExecutableCommand;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::Position;
-use ratatui::widgets::Paragraph;
 use ratatui::Terminal;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::mpsc;
@@ -122,14 +121,15 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
     let draw_single = |terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
                        emulator: &std::sync::Mutex<Emulator>|
      -> io::Result<()> {
-        let emulator = emulator.lock().unwrap();
-        let screen = emulator.screen();
-        let text = pane_view::render_screen_themed(screen, theme);
-        let cursor = (screen.scrollback() == 0)
-            .then(|| pane_view::cursor_position(screen))
-            .flatten();
         terminal.draw(|frame| {
-            frame.render_widget(Paragraph::new(text).style(theme.base()), frame.area());
+            // Release the emulator before Terminal::draw diffs and flushes
+            // the frame to the host terminal.
+            let emulator = emulator.lock().unwrap();
+            let screen = emulator.screen();
+            let cursor = (screen.scrollback() == 0)
+                .then(|| pane_view::cursor_position(screen))
+                .flatten();
+            frame.render_widget(pane_view::TerminalScreen::new(screen, theme), frame.area());
             if let Some((x, y)) = cursor {
                 frame.set_cursor_position(Position { x, y });
             }
@@ -364,7 +364,10 @@ pub async fn run(name: String, default_shell: String) -> io::Result<()> {
                     _=>{}
                 }
             }
-            Some(())=redraw_rx.recv()=>dirty=true,
+            // Keep one output notification pending until the next frame.
+            // Draining while already dirty wakes this loop for every chunk
+            // from every streaming pane without changing what gets drawn.
+            Some(())=redraw_rx.recv(),if !dirty=>dirty=true,
             Ok(())=git.receiver.changed()=>{state.git=git.receiver.borrow().clone();dirty=true;}
             Ok(())=pane_monitor.receiver.changed()=>{
                 use daemon_client::PaneSnapshot;

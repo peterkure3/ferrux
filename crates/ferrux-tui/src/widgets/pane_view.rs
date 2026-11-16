@@ -1,6 +1,6 @@
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
+use ratatui::widgets::{Block, BorderType, Borders, Paragraph, Widget};
 
 use crate::ui::{layout, theme::Theme};
 use ferrux_term::vt100;
@@ -85,6 +85,54 @@ pub fn render_screen_themed(screen: &vt100::Screen, theme: Theme) -> Text<'_> {
     text
 }
 
+/// Copies the terminal's already-laid-out cells straight into the frame.
+/// Avoid allocating spans and repeating Unicode layout for every pane on
+/// every draw. The emulator remains the authority for cell positions.
+pub struct TerminalScreen<'a> {
+    screen: &'a vt100::Screen,
+    theme: Theme,
+}
+
+impl<'a> TerminalScreen<'a> {
+    pub fn new(screen: &'a vt100::Screen, theme: Theme) -> Self {
+        Self { screen, theme }
+    }
+}
+
+impl Widget for TerminalScreen<'_> {
+    fn render(self, area: ratatui::layout::Rect, buffer: &mut ratatui::buffer::Buffer) {
+        let visible = area.intersection(buffer.area);
+        for y in visible.top()..visible.bottom() {
+            for x in visible.left()..visible.right() {
+                let target = &mut buffer[(x, y)];
+                target.reset();
+                target.set_style(self.theme.base());
+                let Some(cell) = self.screen.cell(y - area.y, x - area.x) else {
+                    continue;
+                };
+                // Never draw half a wide glyph across a pane boundary.
+                if cell.is_wide_continuation() || (cell.is_wide() && x + 1 >= visible.right()) {
+                    continue;
+                }
+                let mut style = cell_style(cell);
+                if style.fg == Some(Color::Reset) {
+                    style.fg = Some(self.theme.text);
+                }
+                if style.bg == Some(Color::Reset) {
+                    style.bg = Some(self.theme.background);
+                }
+                target
+                    .set_symbol(if cell.contents().is_empty() {
+                        " "
+                    } else {
+                        cell.contents()
+                    })
+                    .set_style(style);
+            }
+        }
+    }
+}
+
 pub fn draw_panel(
     frame: &mut ratatui::Frame<'_>,
     outer: ferrux_core::layout::split_tree::Rect,
@@ -102,10 +150,7 @@ pub fn draw_panel(
             .border_style(Style::default().fg(if focused { theme.focus } else { theme.muted })),
         area,
     );
-    frame.render_widget(
-        Paragraph::new(render_screen_themed(screen, theme)).style(theme.base()),
-        inner,
-    );
+    frame.render_widget(TerminalScreen::new(screen, theme), inner);
     if area.width > 2 && area.height > 0 {
         let header = ratatui::layout::Rect::new(area.x + 1, area.y, area.width - 2, 1);
         let style = Style::default().fg(theme.text).bg(if focused {
@@ -187,6 +232,70 @@ mod tests {
     use super::*;
     use ferrux_term::Emulator;
     use ratatui::{buffer::Buffer, layout::Rect, widgets::Widget};
+
+    #[test]
+    fn direct_grid_matches_text_renderer_for_colors_unicode_and_clipping() {
+        use crate::ui::theme::{ColorMode, FerruxDark};
+        for output in [
+            "agent: compiling\r\nnext line",
+            "\x1b[1;3;4;7;31;44mstyled\x1b[0m plain\r\n\x1b[48;2;18;52;86m\x1b[K",
+            "界e\u{301}\x1b[38;2;18;52;86mX\x1b[0m 😀 end\r\n界界界",
+            "\x1b[44m\x1b[2J\x1b[?1049hALT\r\n\x1b[32magent",
+        ] {
+            let mut emulator = Emulator::new(4, 24, 100);
+            emulator.process(output.as_bytes());
+            for mode in [ColorMode::Rgb, ColorMode::Indexed, ColorMode::Mono] {
+                let theme = FerruxDark::theme(mode);
+                for width in [0, 1, 2, 3, 8, 24, 30] {
+                    // Paragraph reflows narrow Unicode rows by dropping wide
+                    // glyphs. A terminal must instead preserve grid positions.
+                    if output.contains('界') && width < 24 {
+                        continue;
+                    }
+                    let area = Rect::new(2, 1, width, 5);
+                    let mut expected = Buffer::empty(Rect::new(0, 0, 34, 8));
+                    let mut actual = expected.clone();
+                    Paragraph::new(render_screen_themed(emulator.screen(), theme))
+                        .style(theme.base())
+                        .render(area, &mut expected);
+                    TerminalScreen::new(emulator.screen(), theme).render(area, &mut actual);
+                    assert_eq!(
+                        actual, expected,
+                        "output={output:?}, mode={mode:?}, width={width}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn direct_grid_clears_old_wide_glyphs_and_stays_inside_buffer() {
+        let theme = Theme::detect();
+        let mut emulator = Emulator::new(2, 8, 10);
+        emulator.process("界e\u{301}X".as_bytes());
+        let area = Rect::new(0, 0, 8, 2);
+        let mut buffer = Buffer::empty(area);
+        TerminalScreen::new(emulator.screen(), theme).render(area, &mut buffer);
+        assert_eq!(buffer[(0, 0)].symbol(), "界");
+        assert_eq!(buffer[(2, 0)].symbol(), "e\u{301}");
+        let mut narrow = Buffer::empty(Rect::new(0, 0, 1, 1));
+        TerminalScreen::new(emulator.screen(), theme).render(narrow.area, &mut narrow);
+        assert_eq!(narrow[(0, 0)].symbol(), " ");
+        let mut narrow = Buffer::empty(Rect::new(0, 0, 3, 1));
+        TerminalScreen::new(emulator.screen(), theme).render(narrow.area, &mut narrow);
+        assert_eq!(narrow[(0, 0)].symbol(), "界");
+        assert_eq!(narrow[(2, 0)].symbol(), "e\u{301}");
+        emulator.process(b"\r\x1b[2Kdone");
+        TerminalScreen::new(emulator.screen(), theme).render(area, &mut buffer);
+        assert_eq!(buffer[(0, 0)].symbol(), "d");
+        assert_eq!(buffer[(1, 0)].symbol(), "o");
+        assert_eq!(buffer[(4, 0)].symbol(), " ");
+        // A cropped destination must retain the source grid's coordinates.
+        let mut cropped = Buffer::empty(Rect::new(2, 0, 3, 1));
+        TerminalScreen::new(emulator.screen(), theme).render(area, &mut cropped);
+        assert_eq!(cropped[(2, 0)].symbol(), "n");
+        assert_eq!(cropped[(3, 0)].symbol(), "e");
+    }
 
     #[test]
     fn active_pane_has_distinct_outline_and_label_without_recoloring_terminal() {
