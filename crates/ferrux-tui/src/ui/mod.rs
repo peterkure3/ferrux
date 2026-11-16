@@ -246,21 +246,21 @@ fn render_overlay(frame: &mut Frame<'_>, state: &UiState) {
         Overlay::Help => (
             " Keyboard & mouse ",
             vec![
-                "Ctrl+B then v / h   Split vertical / horizontal".to_owned(),
-                "Ctrl+B then x       Close the active pane".into(),
-                "Ctrl+B then s       Save this workspace".into(),
-                "Ctrl+O              Focus the next pane".into(),
+                "Ctrl B then v / h   Split vertical / horizontal".to_owned(),
+                "Ctrl B then x       Close the active pane".into(),
+                "Ctrl B then s       Save this workspace".into(),
+                "Ctrl O              Focus the next pane".into(),
                 "Left click          Focus a pane / session".into(),
-                "Ctrl+B then j / k   Next / previous session".into(),
-                "Ctrl+B then Tab     Keyboard session navigation".into(),
-                "Ctrl+B then b       Show / hide sidebar".into(),
-                "Ctrl+B then w       Open a saved workspace".into(),
-                "Ctrl+B then ? / ,   Help / configuration".into(),
+                "Ctrl B then j / k   Next / previous session".into(),
+                "Ctrl B then Tab     Keyboard session navigation".into(),
+                "Ctrl B then b       Show / hide sidebar".into(),
+                "Ctrl B then w       Open a saved workspace".into(),
+                "Ctrl B then ? / ,   Help / configuration".into(),
                 "Mouse wheel         Scroll terminal / session list".into(),
                 "Shift+PgUp/PgDn     Scroll pane history by page".into(),
                 "Shift+Home/End      Oldest history / live output".into(),
                 "Shift+wheel         Force local pane scrollback".into(),
-                "Ctrl+Q              Detach; shells keep running".into(),
+                "Ctrl Q              Detach; shells keep running".into(),
                 "Esc                 Close this overlay".into(),
             ],
         ),
@@ -295,7 +295,7 @@ fn render_overlay(frame: &mut Frame<'_>, state: &UiState) {
                 String::new(),
             ];
             if state.workspaces.is_empty() {
-                lines.push("No saved workspaces. Use Ctrl+B then s.".into());
+                lines.push("No saved workspaces. Use Ctrl B then s.".into());
             }
             for (index, name) in state
                 .workspaces

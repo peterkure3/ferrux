@@ -31,7 +31,7 @@ pub fn render(
         Connection::Disconnected => theme.error,
     };
     let right = if width >= 120 {
-        format!("{right}  ^B ? Help  ^B , Config ")
+        format!("{right}  Ctrl B ? Help  Ctrl B , Config ")
     } else if width >= 65 {
         format!("{right} ")
     } else {

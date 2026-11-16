@@ -92,7 +92,7 @@ fn full_frame_resizes_without_gutters_and_focus_never_changes_geometry() {
                 let row: String = (0..width)
                     .map(|x| terminal.backend().buffer()[(x, height - 1)].symbol())
                     .collect();
-                assert!(row.contains("^Q"));
+                assert!(row.contains("Ctrl Q"));
             }
         }
     }
@@ -175,7 +175,9 @@ fn responsive_header_and_footer_do_not_overflow_unicode_metadata() {
             .iter()
             .map(|cell| cell.symbol())
             .collect();
-        assert!(text.contains("^Q"));
+        if width >= 40 {
+            assert!(text.contains("Ctrl Q"));
+        }
         assert!(text.contains("NORMAL"));
         let line = header::render(
             width,

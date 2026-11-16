@@ -22,23 +22,23 @@ pub fn render(
     let mut line = Line::from(Span::styled(format!(" {mode} "), mode_style));
     let commands = if width >= 115 {
         vec![
-            ("^B v", "Split V"),
-            ("^B h", "Split H"),
-            ("^B x", "Close"),
-            ("^B s", "Save"),
-            ("^Q", "Detach"),
-            ("^O", "Focus"),
-            ("^B ?", "Help"),
+            ("Ctrl B v", "Split V"),
+            ("Ctrl B h", "Split H"),
+            ("Ctrl B x", "Close"),
+            ("Ctrl B s", "Save"),
+            ("Ctrl Q", "Detach"),
+            ("Ctrl O", "Focus"),
+            ("Ctrl B ?", "Help"),
         ]
     } else {
         vec![
-            ("^Q", "out"),
-            ("^B ?", "help"),
-            ("^B v", "V"),
-            ("^B h", "H"),
-            ("^O", "next"),
-            ("^B s", "save"),
-            ("^B x", "close"),
+            ("Ctrl Q", "out"),
+            ("Ctrl B ?", "help"),
+            ("Ctrl B v", "V"),
+            ("Ctrl B h", "H"),
+            ("Ctrl O", "next"),
+            ("Ctrl B s", "save"),
+            ("Ctrl B x", "close"),
         ]
     };
     for (key, label) in commands {
