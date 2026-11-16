@@ -7,6 +7,58 @@ phases.
 
 ## Install
 
+**The one-line installer downloads the latest published GitHub release, not the
+latest code on `main`.** Releases can lag behind the code in this repository.
+To get the recent performance improvements, command labels, and updater changes,
+build from `main` using the instructions below.
+
+### Latest code from main
+
+Requires Git, the native Windows MSVC Rust toolchain, and Visual Studio C++
+build tools. Close any running Ferrux UI and daemon before launching the new
+build, so it does not connect to an older daemon. In PowerShell:
+
+```powershell
+git clone https://github.com/peterkure3/ferrux.git
+cd ferrux
+cargo build --workspace --release --locked
+.\target\release\ferrux.exe --version
+.\target\release\ferrux.exe open
+```
+
+For an existing checkout, run `git pull --ff-only` in that checkout instead of
+cloning again, then rebuild. Build the whole workspace so `ferrux.exe` and
+`ferrux-daemon.exe` are updated together.
+
+To replace an existing `%ProgramFiles%\Ferrux` installation with this build,
+close its UI and daemon, then run this from the checkout in an Administrator
+PowerShell window:
+
+```powershell
+.\scripts\update-local-install.ps1
+```
+
+The helper updates both installed executables and rolls back on replacement
+failure. It refuses to replace binaries while installed Ferrux processes are
+running; it does not stop active sessions for you.
+
+If `ferrux` still opens an older copy, check which executable your shell finds:
+
+```powershell
+Get-Command ferrux -All | Select-Object CommandType, Source
+& "$env:ProgramFiles\Ferrux\ferrux.exe" --version
+```
+
+Use `.\target\release\ferrux.exe` to run the source build directly. Unreleased
+builds can share the published release's version number; rebuilding from the
+updated checkout is what includes the latest source changes.
+
+### Latest published release
+
+Check the [GitHub releases page](https://github.com/peterkure3/ferrux/releases)
+for the available tag, release notes, and Windows ZIP. This command installs
+that published ZIP, which may not include the recent changes on `main`:
+
 ```powershell
 irm https://raw.githubusercontent.com/peterkure3/ferrux/main/install.ps1 | iex
 ```
@@ -18,17 +70,6 @@ shell isn't already elevated. Open a new terminal afterward and run:
 ```powershell
 ferrux open
 ```
-
-To install a specific release instead of the latest:
-
-```powershell
-$Version = "v0.1.0"; irm https://raw.githubusercontent.com/peterkure3/ferrux/main/install.ps1 | iex
-```
-
-**Verified**: v0.1.0's installer was run end-to-end on 2026-07-25 —
-self-elevation via UAC, download with live progress, extraction to
-Program Files, machine PATH update, and `ferrux --help` resolving
-correctly from a fresh shell all confirmed working.
 
 ## Usage
 
@@ -50,7 +91,9 @@ and requests administrator access. Close Ferrux's UI and daemon before
 installing; active sessions are left alone and block binary replacement.
 Updates use the installer's Windows archive and require a versioned GitHub
 release containing `ferrux-windows-x64.zip`. Pushing source changes alone does
-not publish an update.
+not publish an update. `ferrux update` does not build from `main`, and an older
+release may not include the updater command. Use the source-build instructions
+above to get changes that have not yet been released.
 
 Inside `ferrux open`: `Ctrl+O` to cycle focus, `Ctrl+B` then `v`/`h` to
 split vertical/horizontal, `x` to close the focused pane, `s` to save
