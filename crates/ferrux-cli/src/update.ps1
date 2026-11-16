@@ -3,7 +3,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$InstallDir,
     [Parameter(Mandatory = $true)][int]$ParentPid,
-    [Parameter(Mandatory = $true)][string]$CurrentVersion
+    [Parameter(Mandatory = $true)][string]$CurrentVersion,
+    [switch]$CheckOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -28,26 +29,33 @@ function Get-FerruxProcesses {
         }
 }
 
-function Invoke-Update {
-    New-Item -ItemType Directory -Path $TempRoot | Out-Null
+function Get-UpdateRelease {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
     Write-Host 'Checking the latest Ferrux release on GitHub...'
     $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" `
-        -Headers @{ 'User-Agent' = 'Ferrux-Updater' }
+        -Headers @{ 'User-Agent' = 'Ferrux-Updater' } -TimeoutSec 30
     $releaseVersionText = $release.tag_name -replace '^[vV]', ''
     try { $releaseVersion = [version]$releaseVersionText } catch {
         throw "GitHub release tag '$($release.tag_name)' is not a supported version number."
     }
     if ($releaseVersion -le [version]$CurrentVersion) {
         Write-Host "Ferrux $CurrentVersion is already at the latest published release ($($release.tag_name))." -ForegroundColor Green
-        return
+        return $null
     }
     $asset = $release.assets | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
     if (-not $asset) { throw "Release $($release.tag_name) has no $AssetName package." }
+    Write-Host "A newer Ferrux release is available: $CurrentVersion -> $($release.tag_name)."
+    return $release
+}
+
+function Invoke-Update {
+    param([Parameter(Mandatory = $true)]$Release)
+    New-Item -ItemType Directory -Path $TempRoot | Out-Null
+    $asset = $Release.assets | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
 
     $zipPath = Join-Path $TempRoot $AssetName
-    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath
+    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath -UseBasicParsing -TimeoutSec 300
     if ($asset.digest -and $asset.digest -match '^sha256:(.+)$') {
         $expectedDigest = $Matches[1].ToLowerInvariant()
         $actual = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -68,6 +76,7 @@ function Invoke-Update {
     New-Item -ItemType Directory -Path $stage | Out-Null
     $backups = @{}
     $installed = @()
+    $keepStage = $false
     try {
         foreach ($name in $names) {
             $stagedFile = Join-Path $stage $name
@@ -84,19 +93,30 @@ function Invoke-Update {
             $installed += $destination
         }
     } catch {
+        $installError = $_
+        $rollbackErrors = @()
         for ($index = $installed.Count - 1; $index -ge 0; $index--) {
             $destination = $installed[$index]
             $backup = $backups[$destination]
-            if ($backup -and (Test-Path -LiteralPath $backup)) {
-                Remove-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue
-                [IO.File]::Move($backup, $destination)
-            } elseif (Test-Path -LiteralPath $destination) {
-                Remove-Item -LiteralPath $destination -Force
+            try {
+                if ($backup -and (Test-Path -LiteralPath $backup)) {
+                    [IO.File]::Replace($backup, $destination, [NullString]::Value)
+                } elseif (Test-Path -LiteralPath $destination) {
+                    Remove-Item -LiteralPath $destination -Force
+                }
+            } catch {
+                $rollbackErrors += $_.Exception.Message
             }
         }
-        throw
+        if ($rollbackErrors.Count) {
+            $keepStage = $true
+            throw "Update failed: $($installError.Exception.Message). Rollback failed: $($rollbackErrors -join '; '). Backups retained at $stage"
+        }
+        throw $installError
     } finally {
-        Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+        if (-not $keepStage) {
+            Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     Write-Host "Ferrux $($release.tag_name) installed in $InstallDir." -ForegroundColor Green
@@ -104,6 +124,15 @@ function Invoke-Update {
 }
 
 try {
+    # Version checks are read-only and must work while panes are running,
+    # without elevation, downloads, or a separate interactive window.
+    $release = Get-UpdateRelease
+    if ($CheckOnly) {
+        if ($null -ne $release) { exit 10 }
+        exit 0
+    }
+    if ($null -eq $release) { return }
+
     if (-not (Test-Admin)) {
         $quotedScript = '"{0}"' -f $PSCommandPath
         $quotedDir = '"{0}"' -f $InstallDir
@@ -125,11 +154,15 @@ try {
         throw "Close Ferrux's UI and daemon before updating so active terminal sessions are not stopped. Still running: $running"
     }
 
-    Invoke-Update
+    Invoke-Update -Release $release
 } catch {
+    if ($CheckOnly) {
+        Write-Error "Ferrux update check failed: $($_.Exception.Message)" -ErrorAction Continue
+        exit 1
+    }
     Write-Host "Ferrux update failed: $($_.Exception.Message)" -ForegroundColor Red
 } finally {
-    if (-not $LaunchedElevated) {
+    if (-not $CheckOnly -and -not $LaunchedElevated) {
         Remove-Item -LiteralPath $TempRoot -Recurse -Force -ErrorAction SilentlyContinue
         if (Test-Path -LiteralPath $PSCommandPath) {
             Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue

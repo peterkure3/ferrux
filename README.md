@@ -39,12 +39,18 @@ correctly from a fresh shell all confirmed working.
 - `ferrux kill-pane <id>` — kill a pane
 - `ferrux workspaces` — list saved workspaces
 
-Run `ferrux update` to download and install the latest GitHub release. It uses
-the same Windows archive as the installer and requests administrator access
-when needed. Close Ferrux's UI and daemon first; the updater leaves running
-sessions alone and refuses to replace binaries while either process is active.
-It only installs a newer published release, so updates require a versioned
-GitHub release containing the Windows package.
+Run `ferrux update` to compare your installed version with the latest GitHub
+release and install it if newer. If you are already up to date (or running a
+newer local build), it exits without downloading or requesting administrator
+access. Use `ferrux update --check` to check without installing, and
+`ferrux --version` to see the installed version.
+
+When an update is available, the installer opens a separate PowerShell window
+and requests administrator access. Close Ferrux's UI and daemon before
+installing; active sessions are left alone and block binary replacement.
+Updates use the installer's Windows archive and require a versioned GitHub
+release containing `ferrux-windows-x64.zip`. Pushing source changes alone does
+not publish an update.
 
 Inside `ferrux open`: `Ctrl+O` to cycle focus, `Ctrl+B` then `v`/`h` to
 split vertical/horizontal, `x` to close the focused pane, `s` to save

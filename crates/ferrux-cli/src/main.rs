@@ -8,7 +8,11 @@ use tokio::net::windows::named_pipe::{ClientOptions, NamedPipeClient};
 use ferrux_ipc::{pipe_name, read_message, write_message, Request, Response};
 
 #[derive(Parser)]
-#[command(name = "ferrux", about = "Ferrux terminal/workspace multiplexer")]
+#[command(
+    name = "ferrux",
+    version,
+    about = "Ferrux terminal/workspace multiplexer"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -47,8 +51,12 @@ enum Commands {
     },
     /// List saved workspace names.
     Workspaces,
-    /// Download and install the latest Ferrux release from GitHub.
-    Update,
+    /// Update this installation when a newer GitHub release is available.
+    Update {
+        /// Check for a newer release without downloading or installing it.
+        #[arg(long)]
+        check: bool,
+    },
 }
 
 #[tokio::main]
@@ -135,7 +143,7 @@ async fn run(cli: Cli) -> io::Result<()> {
             }
             Ok(())
         }
-        Commands::Update => start_update(),
+        Commands::Update { check } => start_update(check),
         Commands::Attach { id } => {
             let mut client = connect_or_spawn_daemon().await?;
             write_message(&mut client, &Request::AttachPane { id }).await?;
@@ -156,7 +164,7 @@ async fn run(cli: Cli) -> io::Result<()> {
 
 /// Start the embedded Windows updater. It elevates itself when needed and
 /// waits for this CLI process to exit before replacing the installed files.
-fn start_update() -> io::Result<()> {
+fn start_update(check_only: bool) -> io::Result<()> {
     let install_dir = std::env::current_exe()?
         .parent()
         .ok_or_else(|| io::Error::other("could not determine Ferrux install directory"))?
@@ -171,7 +179,10 @@ fn start_update() -> io::Result<()> {
     ));
     std::fs::write(&script_path, include_str!("update.ps1"))?;
 
-    let result = std::process::Command::new("powershell.exe")
+    // Check synchronously so an up-to-date installation needs neither a
+    // helper window nor UAC. The installer must run separately so this
+    // process can exit and release its executable before replacement.
+    let check = std::process::Command::new("powershell.exe")
         .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
         .arg(&script_path)
         .arg("-InstallDir")
@@ -180,7 +191,45 @@ fn start_update() -> io::Result<()> {
         .arg(std::process::id().to_string())
         .arg("-CurrentVersion")
         .arg(env!("CARGO_PKG_VERSION"))
-        .spawn();
+        .arg("-CheckOnly")
+        .status();
+    let update_available = match check {
+        Ok(status) if status.success() => false,
+        Ok(status) if status.code() == Some(10) => true,
+        Ok(_) => {
+            let _ = std::fs::remove_file(&script_path);
+            return Err(io::Error::other(
+                "could not check GitHub for a Ferrux update",
+            ));
+        }
+        Err(error) => {
+            let _ = std::fs::remove_file(&script_path);
+            return Err(error);
+        }
+    };
+    if !update_available || check_only {
+        let _ = std::fs::remove_file(&script_path);
+        return Ok(());
+    }
+
+    let mut installer = std::process::Command::new("powershell.exe");
+    installer
+        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
+        .arg(&script_path)
+        .arg("-InstallDir")
+        .arg(&install_dir)
+        .arg("-ParentPid")
+        .arg(std::process::id().to_string())
+        .arg("-CurrentVersion")
+        .arg(env!("CARGO_PKG_VERSION"));
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // The installer is interactive and outlives this process. Give it
+        // its own console for UAC status, errors, and the completion prompt.
+        installer.creation_flags(0x00000010); // CREATE_NEW_CONSOLE
+    }
+    let result = installer.spawn();
 
     match result {
         Ok(_) => {
@@ -272,4 +321,30 @@ fn spawn_daemon() -> io::Result<()> {
     let daemon_path = exe.with_file_name("ferrux-daemon.exe");
     std::process::Command::new(daemon_path).spawn()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn update_supports_install_and_check_modes() {
+        assert!(matches!(
+            Cli::try_parse_from(["ferrux", "update"]).unwrap().command,
+            Commands::Update { check: false }
+        ));
+        assert!(matches!(
+            Cli::try_parse_from(["ferrux", "update", "--check"])
+                .unwrap()
+                .command,
+            Commands::Update { check: true }
+        ));
+    }
+
+    #[test]
+    fn version_flag_reports_the_build_version() {
+        let version = Cli::try_parse_from(["ferrux", "--version"]).err().unwrap();
+        assert_eq!(version.kind(), clap::error::ErrorKind::DisplayVersion);
+        assert!(version.to_string().contains(env!("CARGO_PKG_VERSION")));
+    }
 }
