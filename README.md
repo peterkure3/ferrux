@@ -65,7 +65,9 @@ irm https://raw.githubusercontent.com/peterkure3/ferrux/main/install.ps1 | iex
 
 Installs to `%ProgramFiles%\Ferrux` and adds it to the system PATH.
 Requires administrator privileges — you'll get a UAC prompt if the
-shell isn't already elevated. Open a new terminal afterward and run:
+shell isn't already elevated. Wait for the installation to finish. The
+installer verifies both executables and refreshes PATH in the current
+PowerShell session, so you can immediately run:
 
 ```powershell
 ferrux open

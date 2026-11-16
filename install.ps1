@@ -33,17 +33,22 @@ function Invoke-Elevate {
     Write-Host "Ferrux installs to '$InstallDir', which needs administrator privileges."
     Write-Host "Requesting elevation (a UAC prompt will appear)..."
 
-    $inner = "irm $ScriptUrl | iex"
-    if ($Version -ne "latest") {
-        $inner = "`$Version = '$Version'; $inner"
-    }
-    $arguments = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", $inner)
+    $quotedVersion = $Version.Replace("'", "''")
+    $inner = "try { & ([scriptblock]::Create((Invoke-RestMethod -Uri '$ScriptUrl'))) -Version '$quotedVersion'; exit 0 } catch { [Console]::Error.WriteLine(`$_.Exception.Message); exit 1 }"
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($inner))
+    $arguments = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encoded)
 
     try {
-        Start-Process -FilePath "powershell.exe" -ArgumentList $arguments -Verb RunAs | Out-Null
+        $installer = Start-Process -FilePath "powershell.exe" -ArgumentList $arguments -Verb RunAs -WindowStyle Hidden -PassThru
+        # Wait for the installer itself, rather than any background process
+        # descendants. Keep the original shell alive to refresh its PATH.
+        $installer.Handle | Out-Null
+        $installer.WaitForExit()
+        if ($installer.ExitCode -ne 0) {
+            throw "The elevated installer exited with code $($installer.ExitCode)."
+        }
     } catch {
-        Write-Error "Elevation was declined or failed. Ferrux was not installed."
-        exit 1
+        throw "Ferrux installation was declined or failed: $($_.Exception.Message)"
     }
 }
 
@@ -123,20 +128,53 @@ function Install-Ferrux {
         Remove-Item -Path $tempZip -ErrorAction SilentlyContinue
     }
 
+    Assert-FerruxBinaries
+
     $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
     if (($machinePath -split ";") -notcontains $InstallDir) {
         Write-Host "Adding $InstallDir to the system PATH..."
         [Environment]::SetEnvironmentVariable("Path", "$machinePath;$InstallDir", "Machine")
     }
 
-    Write-Host ""
-    Write-Host "Ferrux installed successfully." -ForegroundColor Green
-    Write-Host "Open a new terminal and run: ferrux open"
 }
 
-if (-not (Test-Admin)) {
-    Invoke-Elevate
-    return
+function Assert-FerruxBinaries {
+    foreach ($name in @('ferrux.exe', 'ferrux-daemon.exe')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $InstallDir $name) -PathType Leaf)) {
+            throw "Installation is incomplete: $name is missing from $InstallDir."
+        }
+    }
 }
 
-Install-Ferrux
+function Enable-FerruxCommand {
+    Assert-FerruxBinaries
+    $installedCli = Join-Path $InstallDir 'ferrux.exe'
+    & $installedCli --help | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'The installed Ferrux executable failed its startup check.' }
+
+    # A child process cannot change its parent's environment. This function
+    # also runs in the original shell after the elevated installer finishes.
+    # Preserve session-only PATH entries and put this installation first.
+    $otherEntries = @($env:Path -split ';' | Where-Object {
+        $_ -and $_.Trim().TrimEnd('\') -ine $InstallDir.TrimEnd('\')
+    })
+    $env:Path = (@($InstallDir) + $otherEntries) -join ';'
+    $command = Get-Command ferrux -CommandType Application -ErrorAction Stop | Select-Object -First 1
+    if ($command.Source -ine $installedCli) {
+        throw "Ferrux resolves to $($command.Source), expected $installedCli."
+    }
+}
+
+function Invoke-FerruxInstaller {
+    if (Test-Admin) {
+        Install-Ferrux
+    } else {
+        Invoke-Elevate
+    }
+    Enable-FerruxCommand
+    Write-Host ''
+    Write-Host 'Ferrux installed successfully and is available in this terminal.' -ForegroundColor Green
+    Write-Host 'Run: ferrux open'
+}
+
+Invoke-FerruxInstaller
