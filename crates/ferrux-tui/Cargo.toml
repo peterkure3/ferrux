@@ -12,3 +12,6 @@ ferrux-term = { version = "0.1.0", path = "../ferrux-term" }
 ratatui.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "net", "io-util", "macros", "sync", "time"] }
 toml.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_System_DataExchange", "Win32_System_Memory"] }

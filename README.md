@@ -109,6 +109,13 @@ Click and drag with the left mouse button to highlight terminal text in
 started and remains highlighted after release. Clicking again, typing,
 scrolling, or resizing clears it.
 
+Right-click highlighted text to copy it to the Windows clipboard. Right-click
+elsewhere inside a terminal pane to paste clipboard text at that pane's input
+cursor. Copying clears the highlight, so another right-click can paste it.
+Left-click keeps focusing/selecting; borders and the sidebar do not paste.
+Paste preserves Unicode and line breaks and uses bracketed paste when requested
+by the child application. No extra Enter key is added.
+
 The Ratatui interface uses charcoal, forest green, cream and amber, with shared
 pane borders and a responsive sidebar. `Ctrl+B` then `?` opens help, `,` shows
 theme settings, `b` toggles the sidebar, `Tab` enters keyboard session navigation,

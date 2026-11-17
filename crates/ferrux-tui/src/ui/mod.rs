@@ -257,6 +257,7 @@ fn render_overlay(frame: &mut Frame<'_>, state: &UiState) {
                 "Ctrl O              Focus the next pane".into(),
                 "Left click          Focus a pane / session".into(),
                 "Left drag           Highlight terminal text".into(),
+                "Right click         Copy highlight / paste in pane".into(),
                 "Ctrl B then j / k   Next / previous session".into(),
                 "Ctrl B then Tab     Keyboard session navigation".into(),
                 "Ctrl B then b       Show / hide sidebar".into(),

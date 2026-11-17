@@ -16,6 +16,36 @@ pub struct TextSelection {
 }
 
 impl TextSelection {
+    fn bounds(&self) -> (Position, Position) {
+        if (self.anchor.y, self.anchor.x) <= (self.end.y, self.end.x) {
+            (self.anchor, self.end)
+        } else {
+            (self.end, self.anchor)
+        }
+    }
+
+    pub fn contains(&self, column: u16, row: u16) -> bool {
+        let (start, end) = self.bounds();
+        self.extended
+            && self.area.contains((column, row).into())
+            && (row, column) >= (start.y, start.x)
+            && (row, column) <= (end.y, end.x)
+    }
+
+    /// Read logical text from the emulator, omitting chrome, ANSI and soft wraps.
+    pub fn text(&self, screen: &ferrux_term::vt100::Screen) -> String {
+        let (start, end) = self.bounds();
+        if !self.extended {
+            return String::new();
+        }
+        screen.contents_between(
+            start.y - self.area.y,
+            start.x - self.area.x,
+            end.y - self.area.y,
+            end.x - self.area.x + 1,
+        )
+    }
+
     pub fn start(area: ratatui::layout::Rect, event: MouseEvent) -> Option<Self> {
         let anchor = Position::new(event.column, event.row);
         area.contains(anchor).then_some(Self {
@@ -50,11 +80,7 @@ impl TextSelection {
         if !self.extended {
             return;
         }
-        let (start, end) = if (self.anchor.y, self.anchor.x) <= (self.end.y, self.end.x) {
-            (self.anchor, self.end)
-        } else {
-            (self.end, self.anchor)
-        };
+        let (start, end) = self.bounds();
         let visible = self.area.intersection(buffer.area);
         for y in visible.top()..visible.bottom() {
             for x in visible.left()..visible.right() {
@@ -76,6 +102,7 @@ pub fn captures_event(kind: MouseEventKind) -> bool {
         MouseEventKind::Down(MouseButton::Left)
             | MouseEventKind::Drag(MouseButton::Left)
             | MouseEventKind::Up(MouseButton::Left)
+            | MouseEventKind::Down(MouseButton::Right)
             | MouseEventKind::ScrollUp
             | MouseEventKind::ScrollDown
     )
@@ -155,11 +182,46 @@ mod tests {
             MouseEventKind::Up(MouseButton::Left),
             MouseEventKind::ScrollUp,
             MouseEventKind::ScrollDown,
+            MouseEventKind::Down(MouseButton::Right),
         ] {
             assert!(captures_event(kind));
         }
         assert!(!captures_event(MouseEventKind::Moved));
         assert!(!captures_event(MouseEventKind::Drag(MouseButton::Right)));
+    }
+
+    #[test]
+    fn copied_text_uses_terminal_cells_and_logical_lines_in_both_directions() {
+        use ferrux_term::Emulator;
+        let area = ratatui::layout::Rect::new(30, 3, 12, 4);
+        let mut emulator = Emulator::new(4, 12, 10);
+        emulator.process("\x1b[31m界e\u{301} first\x1b[0m\r\nsecond".as_bytes());
+        for (start, end) in [((30, 3), (35, 4)), ((35, 4), (30, 3))] {
+            let mut selection = TextSelection::start(area, click(start.0, start.1)).unwrap();
+            selection.update(MouseEvent {
+                kind: MouseEventKind::Up(MouseButton::Left),
+                ..click(end.0, end.1)
+            });
+            assert_eq!(
+                selection.text(emulator.screen()),
+                "界e\u{301} first\nsecond"
+            );
+            assert!(selection.contains(30, 3));
+            assert!(selection.contains(35, 4));
+            assert!(!selection.contains(36, 4));
+            assert!(!selection.contains(29, 4));
+        }
+        let mut emulator = Emulator::new(4, 12, 10);
+        emulator.process(b"abcdefghijklmnop");
+        let mut selection = TextSelection::start(area, click(30, 3)).unwrap();
+        selection.update(MouseEvent {
+            kind: MouseEventKind::Up(MouseButton::Left),
+            ..click(33, 4)
+        });
+        assert_eq!(selection.text(emulator.screen()), "abcdefghijklmnop");
+        emulator.process(b"\r\nextra1\r\nextra2\r\nextra3");
+        emulator.scroll(isize::MAX);
+        assert_eq!(selection.text(emulator.screen()), "abcdefghijklmnop");
     }
 
     #[test]

@@ -18,6 +18,7 @@ use ferrux_core::ports::session_store::SessionStore;
 use ferrux_ipc::{read_message, write_message, Request, Response, PIPE_NAME};
 use ferrux_term::Emulator;
 
+use crate::clipboard;
 use crate::daemon_client::{self, connect_with_retry};
 use crate::input::keymap::{self, Action};
 use crate::input::mouse;
@@ -68,6 +69,32 @@ fn input_events() -> mpsc::Receiver<Event> {
     rx
 }
 
+/// Never hold the emulator lock during clipboard access or while awaiting I/O.
+async fn clipboard_click(
+    selection: Option<mouse::TextSelection>,
+    emulator: &std::sync::Mutex<Emulator>,
+    event: crossterm::event::MouseEvent,
+) -> io::Result<Option<Vec<u8>>> {
+    let copied = selection
+        .filter(|selection| selection.contains(event.column, event.row))
+        .map(|selection| selection.text(emulator.lock().unwrap().screen()));
+    if let Some(text) = copied {
+        tokio::task::spawn_blocking(move || clipboard::write_text(&text))
+            .await
+            .map_err(io::Error::other)??;
+        return Ok(None);
+    }
+    let text = tokio::task::spawn_blocking(clipboard::read_text)
+        .await
+        .map_err(io::Error::other)??;
+    let mut emulator = emulator.lock().unwrap();
+    let bytes = clipboard::paste_bytes(&text, emulator.screen().bracketed_paste());
+    if !bytes.is_empty() {
+        emulator.scroll(isize::MIN);
+    }
+    Ok(Some(bytes))
+}
+
 /// Attaches to `pane_id` on the running daemon and renders its output
 /// live via a `vt100` emulator + ratatui, forwarding key presses back to
 /// the pane. Returns once the pane closes or `Ctrl+Q` is pressed.
@@ -112,9 +139,11 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
 
     let theme = crate::ui::theme::Theme::detect();
     let mut selection: Option<mouse::TextSelection> = None;
+    let mut clipboard_notice: Option<String> = None;
     let draw_single = |terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
                        emulator: &std::sync::Mutex<Emulator>,
-                       selection: &Option<mouse::TextSelection>|
+                       selection: &Option<mouse::TextSelection>,
+                       notice: &Option<String>|
      -> io::Result<()> {
         terminal.draw(|frame| {
             // Release the emulator before Terminal::draw diffs and flushes
@@ -128,6 +157,22 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
             if let Some(selection) = selection {
                 selection.highlight(frame.buffer_mut());
             }
+            if let Some(notice) = notice {
+                let area = frame.area();
+                frame.render_widget(
+                    ratatui::widgets::Paragraph::new(notice.as_str()).style(
+                        ratatui::style::Style::default()
+                            .fg(theme.error)
+                            .bg(theme.background),
+                    ),
+                    ratatui::layout::Rect::new(
+                        area.x,
+                        area.bottom().saturating_sub(1),
+                        area.width,
+                        area.height.min(1),
+                    ),
+                );
+            }
             if let Some((x, y)) = cursor {
                 frame.set_cursor_position(Position { x, y });
             }
@@ -135,7 +180,7 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
         Ok(())
     };
 
-    draw_single(&mut terminal, &emulator, &selection)?;
+    draw_single(&mut terminal, &emulator, &selection, &clipboard_notice)?;
 
     let mut buf = [0u8; 4096];
     let mut dirty = false;
@@ -163,6 +208,7 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
                     }
                     Some(Event::Key(key)) => {
                         selection = None;
+                        clipboard_notice = None;
                         dirty = true;
                         match keymap::translate(key, false) {
                         Some(Action::Bytes(bytes)) => {
@@ -189,7 +235,16 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
                         dirty = true;
                     }
                     Some(Event::Mouse(event)) => {
-                        if event.kind == MouseEventKind::Down(MouseButton::Left) {
+                        if event.kind == MouseEventKind::Down(MouseButton::Right) && terminal.size().map(ratatui::layout::Rect::from)?.contains((event.column,event.row).into()) {
+                            match clipboard_click(selection, &emulator, event).await {
+                                Ok(bytes) => {
+                                    selection = None; clipboard_notice = None;
+                                    if let Some(bytes) = bytes { if !bytes.is_empty() {pipe_write.write_all(&bytes).await?;} }
+                                }
+                                Err(error) => clipboard_notice = Some(format!("Clipboard: {error}")),
+                            }
+                        } else if event.kind == MouseEventKind::Down(MouseButton::Left) {
+                            clipboard_notice = None;
                             selection = mouse::TextSelection::start(terminal.size()?.into(), event);
                         } else if let Some(selection) = &mut selection {
                             selection.update(event);
@@ -201,7 +256,7 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
                 }
             }
             _ = tokio::time::sleep_until(next_frame), if dirty => {
-                draw_single(&mut terminal, &emulator, &selection)?;
+                draw_single(&mut terminal, &emulator, &selection, &clipboard_notice)?;
                 dirty = false;
                 next_frame = tokio::time::Instant::now() + std::time::Duration::from_millis(16);
             }
@@ -281,6 +336,27 @@ pub async fn run(name: String, default_shell: String) -> io::Result<()> {
                             }
                             MouseEventKind::Drag(MouseButton::Left) | MouseEventKind::Up(MouseButton::Left)=>{
                                 if let Some(selection)=&mut state.selection {selection.update(event);dirty=true;}
+                            }
+                            MouseEventKind::Down(MouseButton::Right)=>{
+                                // Only terminal content can receive clipboard input; borders
+                                // and the sidebar must never paste into a different pane.
+                                if let Some(pane)=layout::panes(workspace.root.as_ref().unwrap(),main_area).into_iter()
+                                    .find(|pane|layout::viewport(pane.rect).contains((event.column,event.row).into())) {
+                                    if let Some(session)=sessions.get(&pane.pane) {
+                                        match clipboard_click(state.selection,&session.emulator,event).await {
+                                            Ok(bytes)=>{
+                                                state.selection=None;
+                                                state.notice=Some(if bytes.is_some(){"Pasted from clipboard"}else{"Copied to clipboard"}.into());
+                                                if let Some(bytes)=bytes {
+                                                    focused=Some(pane.pane);state.sidebar_focus=false;state.prefix=false;state.follow_focus=true;
+                                                    if !bytes.is_empty() && session.write_tx.send(bytes).await.is_err(){break 'outer Err(io::Error::new(io::ErrorKind::BrokenPipe,"pane input closed"));}
+                                                }
+                                            }
+                                            Err(error)=>state.notice=Some(format!("Clipboard: {error}")),
+                                        }
+                                        dirty=true;
+                                    }
+                                }
                             }
                             MouseEventKind::ScrollUp | MouseEventKind::ScrollDown=>{
                                 state.selection=None; dirty=true;

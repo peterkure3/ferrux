@@ -1,6 +1,7 @@
 //! Real Windows ConPTY interaction test, independent of the desktop capture API.
 //! cargo run -p ferrux-cli --example windows_ui_smoke -- target/release target/ui-smoke
 use ferrux_term::Emulator;
+use ferrux_tui::clipboard;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::{
     fs,
@@ -12,6 +13,12 @@ use std::{
 };
 
 struct Daemon(Child);
+struct ClipboardText(String);
+impl Drop for ClipboardText {
+    fn drop(&mut self) {
+        let _ = clipboard::write_text(&self.0);
+    }
+}
 impl Drop for Daemon {
     fn drop(&mut self) {
         let _ = self.0.kill();
@@ -72,8 +79,27 @@ fn wait_for_highlight(screen: &Mutex<Emulator>, selected: bool) -> io::Result<()
     }
 }
 
+fn text_position(screen: &Mutex<Emulator>, text: &str) -> io::Result<(u16, u16)> {
+    let emulator = screen.lock().unwrap();
+    let grid = emulator.screen();
+    let (rows, cols) = grid.size();
+    for row in 0..rows {
+        for col in 0..cols.saturating_sub(text.len() as u16) {
+            if text.chars().enumerate().all(|(offset, character)| {
+                grid.cell(row, col + offset as u16)
+                    .is_some_and(|cell| cell.contents() == character.to_string())
+            }) {
+                return Ok((col + 1, row + 1)); // SGR mouse coordinates are one-based.
+            }
+        }
+    }
+    Err(io::Error::other("test text not found in terminal grid"))
+}
+
 #[tokio::main]
 async fn main() -> io::Result<()> {
+    // Restore the prior clipboard text even if an interaction assertion fails.
+    let _clipboard_text = ClipboardText(clipboard::read_text()?);
     let mut arguments = std::env::args().skip(1);
     let binary = PathBuf::from(arguments.next().expect("binary directory")).canonicalize()?;
     let output = PathBuf::from(arguments.next().expect("output directory"));
@@ -194,6 +220,53 @@ shell = "cmd.exe"
         wait_for_highlight(&screen, true)?;
         writer.write_all(b"\r")?;
         wait_for_highlight(&screen, false)?;
+        let (column, row) = text_position(&screen, "FERRUX_INPUT_OK")?;
+        let end = column + "FERRUX_INPUT_OK".len() as u16 - 1;
+        writer.write_all(format!("\x1b[<0;{column};{row}M\x1b[<32;{end};{row}M\x1b[<0;{end};{row}m\x1b[<2;{column};{row}M\x1b[<2;{column};{row}m").as_bytes())?;
+        wait_for(&screen, "right click copy", |text| {
+            text.contains("Copied to clipboard")
+        })?;
+        assert_eq!(clipboard::read_text()?, "FERRUX_INPUT_OK");
+        clipboard::write_text("echo FERRUX_CLIPBOARD_%OS%")?;
+        // Chrome must not paste into the currently focused shell.
+        writer.write_all(b"\x1b[<2;5;7M\x1b[<2;5;7m\x1b[<2;95;8M\x1b[<2;95;8m")?;
+        std::thread::sleep(Duration::from_millis(100));
+        {
+            let emulator = screen.lock().unwrap();
+            assert!(!emulator
+                .screen()
+                .contents()
+                .contains("echo FERRUX_CLIPBOARD"));
+        }
+        // Paste into the other pane: focus follows that target, with no implicit Enter.
+        writer.write_all(b"\x1b[<2;100;10M\x1b[<2;100;10m")?;
+        wait_for(&screen, "right click paste into CMD", |text| {
+            text.contains("echo FERRUX_CLIPBOARD_%OS%")
+        })?;
+        assert!(!screen
+            .lock()
+            .unwrap()
+            .screen()
+            .contents()
+            .contains("FERRUX_CLIPBOARD_Windows_NT"));
+        writer.write_all(b"\r")?;
+        wait_for(
+            &screen,
+            "pasted command executes only after Enter",
+            |text| text.contains("FERRUX_CLIPBOARD_Windows_NT"),
+        )?;
+        // Exercise native Unicode clipboard round-tripping and PowerShell paste.
+        clipboard::write_text("Write-Output ('FX_'+[char]0x754C+'_PASTE')")?;
+        writer.write_all(b"\x1b[<2;35;15M\x1b[<2;35;15m")?;
+        wait_for(&screen, "right click paste into PowerShell", |text| {
+            text.contains("[char]0x754C")
+        })?;
+        writer.write_all(b"\r")?;
+        wait_for(&screen, "PowerShell pasted input", |text| {
+            text.contains("FX_界_PASTE")
+        })?;
+        clipboard::write_text("界e\u{301}\nsecond line")?;
+        assert_eq!(clipboard::read_text()?, "界e\u{301}\r\nsecond line");
         writer.write_all(b"0..89 | ForEach-Object { 'FX_HISTORY_{0:D3}' -f $_ }; Write-Output ('FX_'+'HISTORY_DONE')\r")?;
         wait_for(&screen, "long output", |text| {
             text.contains("FX_HISTORY_DONE")
@@ -301,6 +374,6 @@ shell = "cmd.exe"
         detached_count, 2,
         "detach must preserve the two shell processes"
     );
-    println!("PASS: real ConPTY UI, mouse text highlighting and clearing, mouse/keyboard scrollback, alternate-screen wheel routing, return to live, focus, PowerShell/CMD input, help, save, split/close, four sizes, detach preserves 2 shells");
+    println!("PASS: real ConPTY UI, mouse highlighting, native clipboard copy/paste and Unicode, paste targets clicked pane without Enter, chrome rejects paste, mouse/keyboard scrollback, alternate-screen wheel routing, focus, PowerShell/CMD input, help, save, split/close, four sizes, detach preserves 2 shells");
     Ok(())
 }
