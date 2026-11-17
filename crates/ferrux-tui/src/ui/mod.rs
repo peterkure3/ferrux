@@ -43,6 +43,7 @@ pub struct PaneStatus {
     pub agent: Option<AgentKind>,
 }
 pub struct UiState {
+    pub selection: Option<crate::input::mouse::TextSelection>,
     pub theme: Theme,
     pub sidebar_visible: bool,
     pub sessions_expanded: bool,
@@ -61,6 +62,7 @@ pub struct UiState {
 impl Default for UiState {
     fn default() -> Self {
         Self {
+            selection: None,
             theme: Theme::detect(),
             sidebar_visible: true,
             sessions_expanded: true,
@@ -127,6 +129,9 @@ pub fn render(
             }
         }
         merge_junctions(frame, &panes, focused, theme);
+    }
+    if let Some(selection) = &state.selection {
+        selection.highlight(frame.buffer_mut());
     }
     frame.render_widget(
         status_line::render(
@@ -251,6 +256,7 @@ fn render_overlay(frame: &mut Frame<'_>, state: &UiState) {
                 "Ctrl B then s       Save this workspace".into(),
                 "Ctrl O              Focus the next pane".into(),
                 "Left click          Focus a pane / session".into(),
+                "Left drag           Highlight terminal text".into(),
                 "Ctrl B then j / k   Next / previous session".into(),
                 "Ctrl B then Tab     Keyboard session navigation".into(),
                 "Ctrl B then b       Show / hide sidebar".into(),

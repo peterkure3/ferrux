@@ -46,6 +46,32 @@ fn wait_for(
     }
 }
 
+fn wait_for_highlight(screen: &Mutex<Emulator>, selected: bool) -> io::Result<()> {
+    let start = Instant::now();
+    loop {
+        let emulator = screen.lock().unwrap();
+        let grid = emulator.screen();
+        let matches = grid
+            .cell(7, 34)
+            .is_some_and(|cell| cell.inverse() == selected)
+            && grid
+                .cell(7, 42)
+                .is_some_and(|cell| cell.inverse() == selected)
+            && grid.cell(7, 43).is_some_and(|cell| !cell.inverse())
+            && grid.cell(7, 94).is_some_and(|cell| !cell.inverse());
+        drop(emulator);
+        if matches {
+            return Ok(());
+        }
+        if start.elapsed() > Duration::from_secs(5) {
+            return Err(io::Error::other(format!(
+                "mouse highlight did not become {selected}"
+            )));
+        }
+        std::thread::sleep(Duration::from_millis(40));
+    }
+}
+
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let mut arguments = std::env::args().skip(1);
@@ -92,6 +118,10 @@ shell = "cmd.exe"
     command.cwd(std::env::current_dir()?);
     command.env("FERRUX_SESSION_DIR", &sessions);
     command.env("FERRUX_COLOR_MODE", "rgb");
+    // The automation host may advertise TERM=dumb / NO_COLOR. This test
+    // emulates an ANSI terminal and needs style output to verify selection.
+    command.env("TERM", "xterm-256color");
+    command.env("NO_COLOR", "");
     let mut child = pty.slave.spawn_command(command).map_err(io::Error::other)?;
     drop(pty.slave);
     let mut reader = pty.master.try_clone_reader().map_err(io::Error::other)?;
@@ -158,6 +188,12 @@ shell = "cmd.exe"
         wait_for(&screen, "PowerShell input routing", |text| {
             text.contains("FERRUX_INPUT_OK")
         })?;
+        // SGR press, left drag, release: verify the host-visible cell styles,
+        // including persistence after release and clearing on keyboard input.
+        writer.write_all(b"\x1b[<0;35;8M\x1b[<32;43;8M\x1b[<0;43;8m")?;
+        wait_for_highlight(&screen, true)?;
+        writer.write_all(b"\r")?;
+        wait_for_highlight(&screen, false)?;
         writer.write_all(b"0..89 | ForEach-Object { 'FX_HISTORY_{0:D3}' -f $_ }; Write-Output ('FX_'+'HISTORY_DONE')\r")?;
         wait_for(&screen, "long output", |text| {
             text.contains("FX_HISTORY_DONE")
@@ -226,7 +262,7 @@ shell = "cmd.exe"
                 .map_err(io::Error::other)?;
             std::thread::sleep(Duration::from_millis(700));
             let text = wait_for(&screen, "resize", |text| {
-                text.contains("NORMAL") && text.contains("^Q")
+                text.contains("NORMAL") && text.contains("Ctrl Q")
             })?;
             fs::write(output.join(format!("{cols}x{rows}.txt")), text)?;
         }
@@ -265,6 +301,6 @@ shell = "cmd.exe"
         detached_count, 2,
         "detach must preserve the two shell processes"
     );
-    println!("PASS: real ConPTY UI, mouse/keyboard scrollback, alternate-screen wheel routing, return to live, focus, PowerShell/CMD input, help, save, split/close, four sizes, detach preserves 2 shells");
+    println!("PASS: real ConPTY UI, mouse text highlighting and clearing, mouse/keyboard scrollback, alternate-screen wheel routing, return to live, focus, PowerShell/CMD input, help, save, split/close, four sizes, detach preserves 2 shells");
     Ok(())
 }

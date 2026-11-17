@@ -2,6 +2,84 @@ use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 
 use ferrux_core::domain::workspace::{PaneId, SplitNode};
 use ferrux_core::layout::split_tree::Rect;
+use ratatui::{buffer::Buffer, layout::Position, style::Modifier};
+
+/// A selection is confined to the terminal viewport where the drag began.
+/// Coordinates refer to the currently displayed grid (including scrollback).
+#[derive(Clone, Copy, Debug)]
+pub struct TextSelection {
+    area: ratatui::layout::Rect,
+    anchor: Position,
+    end: Position,
+    dragging: bool,
+    extended: bool,
+}
+
+impl TextSelection {
+    pub fn start(area: ratatui::layout::Rect, event: MouseEvent) -> Option<Self> {
+        let anchor = Position::new(event.column, event.row);
+        area.contains(anchor).then_some(Self {
+            area,
+            anchor,
+            end: anchor,
+            dragging: true,
+            extended: false,
+        })
+    }
+
+    pub fn update(&mut self, event: MouseEvent) {
+        if !self.dragging {
+            return;
+        }
+        if matches!(
+            event.kind,
+            MouseEventKind::Drag(MouseButton::Left) | MouseEventKind::Up(MouseButton::Left)
+        ) {
+            self.end = Position::new(
+                event.column.clamp(self.area.x, self.area.right() - 1),
+                event.row.clamp(self.area.y, self.area.bottom() - 1),
+            );
+            self.extended |= self.end != self.anchor;
+            if event.kind == MouseEventKind::Up(MouseButton::Left) {
+                self.dragging = false;
+            }
+        }
+    }
+
+    pub fn highlight(&self, buffer: &mut Buffer) {
+        if !self.extended {
+            return;
+        }
+        let (start, end) = if (self.anchor.y, self.anchor.x) <= (self.end.y, self.end.x) {
+            (self.anchor, self.end)
+        } else {
+            (self.end, self.anchor)
+        };
+        let visible = self.area.intersection(buffer.area);
+        for y in visible.top()..visible.bottom() {
+            for x in visible.left()..visible.right() {
+                if (y, x) >= (start.y, start.x) && (y, x) <= (end.y, end.x) {
+                    // Toggle inverse so already-inverted child text also changes,
+                    // while preserving ANSI colors and other text attributes.
+                    let cell = &mut buffer[(x, y)];
+                    cell.modifier.toggle(Modifier::REVERSED);
+                }
+            }
+        }
+    }
+}
+
+/// Ignore hover and unused buttons, but retain the full left-drag lifecycle.
+pub fn captures_event(kind: MouseEventKind) -> bool {
+    matches!(
+        kind,
+        MouseEventKind::Down(MouseButton::Left)
+            | MouseEventKind::Drag(MouseButton::Left)
+            | MouseEventKind::Up(MouseButton::Left)
+            | MouseEventKind::ScrollUp
+            | MouseEventKind::ScrollDown
+    )
+}
 
 /// Select the clicked pane using the same outer rectangles as rendering.
 /// Borders belong to their pane; sidebar/footer clicks leave focus alone.
@@ -67,6 +145,91 @@ mod tests {
             row,
             modifiers: KeyModifiers::NONE,
         }
+    }
+
+    #[test]
+    fn captures_drag_and_release_but_not_hover() {
+        for kind in [
+            MouseEventKind::Down(MouseButton::Left),
+            MouseEventKind::Drag(MouseButton::Left),
+            MouseEventKind::Up(MouseButton::Left),
+            MouseEventKind::ScrollUp,
+            MouseEventKind::ScrollDown,
+        ] {
+            assert!(captures_event(kind));
+        }
+        assert!(!captures_event(MouseEventKind::Moved));
+        assert!(!captures_event(MouseEventKind::Drag(MouseButton::Right)));
+    }
+
+    #[test]
+    fn drag_highlights_linear_text_in_either_direction_and_survives_release() {
+        use ratatui::{layout::Rect, style::Color};
+        let area = Rect::new(3, 2, 5, 3);
+        for (start, end) in [((5, 2), (4, 4)), ((4, 4), (5, 2))] {
+            let mut selection = TextSelection::start(area, click(start.0, start.1)).unwrap();
+            selection.update(MouseEvent {
+                kind: MouseEventKind::Drag(MouseButton::Left),
+                ..click(end.0, end.1)
+            });
+            selection.update(MouseEvent {
+                kind: MouseEventKind::Up(MouseButton::Left),
+                ..click(end.0, end.1)
+            });
+            // A stray drag after release cannot alter a completed selection.
+            selection.update(MouseEvent {
+                kind: MouseEventKind::Drag(MouseButton::Left),
+                ..click(7, 4)
+            });
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 12, 7));
+            buffer[(6, 3)].set_symbol("X").set_fg(Color::Red);
+            buffer[(7, 3)].modifier = Modifier::BOLD | Modifier::REVERSED;
+            selection.highlight(&mut buffer);
+            for y in 0..7 {
+                for x in 0..12 {
+                    if (x, y) == (7, 3) {
+                        continue;
+                    }
+                    let expected =
+                        area.contains((x, y).into()) && (y, x) >= (2, 5) && (y, x) <= (4, 4);
+                    assert_eq!(
+                        buffer[(x, y)].modifier.contains(Modifier::REVERSED),
+                        expected,
+                        "{x},{y}"
+                    );
+                }
+            }
+            assert_eq!(buffer[(6, 3)].symbol(), "X");
+            assert_eq!(buffer[(6, 3)].fg, Color::Red);
+            assert_eq!(buffer[(7, 3)].modifier, Modifier::BOLD);
+        }
+    }
+
+    #[test]
+    fn click_alone_does_not_highlight_and_drag_is_clamped_to_viewport() {
+        use ratatui::layout::Rect;
+        let area = Rect::new(3, 2, 5, 3);
+        assert!(TextSelection::start(area, click(2, 2)).is_none());
+        assert!(TextSelection::start(Rect::new(0, 0, 0, 0), click(0, 0)).is_none());
+        let mut selection = TextSelection::start(area, click(3, 2)).unwrap();
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 12, 7));
+        selection.highlight(&mut buffer);
+        assert!(buffer.content.iter().all(|cell| cell.modifier.is_empty()));
+        selection.update(MouseEvent {
+            kind: MouseEventKind::Drag(MouseButton::Left),
+            ..click(u16::MAX, u16::MAX)
+        });
+        selection.highlight(&mut buffer);
+        for y in 0..7 {
+            for x in 0..12 {
+                assert_eq!(
+                    buffer[(x, y)].modifier.contains(Modifier::REVERSED),
+                    area.contains((x, y).into())
+                );
+            }
+        }
+        // Drawing into a cropped destination must also stay in bounds.
+        selection.highlight(&mut Buffer::empty(Rect::new(5, 3, 1, 1)));
     }
 
     #[test]

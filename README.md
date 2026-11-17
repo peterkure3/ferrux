@@ -104,6 +104,11 @@ to focus it. The active pane has a Football Heritage green border, a forest-gree
 header and an `ACTIVE` label; its sidebar entry is highlighted. Keyboard input goes to that pane. Mouse
 capture is released when you detach or the UI exits.
 
+Click and drag with the left mouse button to highlight terminal text in
+`ferrux open` or `ferrux view`. Selection stays inside the pane where the drag
+started and remains highlighted after release. Clicking again, typing,
+scrolling, or resizing clears it.
+
 The Ratatui interface uses charcoal, forest green, cream and amber, with shared
 pane borders and a responsive sidebar. `Ctrl+B` then `?` opens help, `,` shows
 theme settings, `b` toggles the sidebar, `Tab` enters keyboard session navigation,

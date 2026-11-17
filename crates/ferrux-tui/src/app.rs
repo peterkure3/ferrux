@@ -54,15 +54,8 @@ fn input_events() -> mpsc::Receiver<Event> {
             }
             match event::read() {
                 Ok(Event::Key(key)) if key.kind == crossterm::event::KeyEventKind::Release => {}
-                // Capture is for click-to-focus; hover/drag/release events
-                // must not fill the bounded queue ahead of keyboard input.
-                Ok(Event::Mouse(mouse))
-                    if !matches!(
-                        mouse.kind,
-                        MouseEventKind::Down(MouseButton::Left)
-                            | MouseEventKind::ScrollUp
-                            | MouseEventKind::ScrollDown
-                    ) => {}
+                // Hover and unused buttons must not fill the bounded queue.
+                Ok(Event::Mouse(mouse)) if !mouse::captures_event(mouse.kind) => {}
                 Ok(event) => {
                     if tx.blocking_send(event).is_err() {
                         break;
@@ -118,8 +111,10 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
     let mut input_rx = input_events();
 
     let theme = crate::ui::theme::Theme::detect();
+    let mut selection: Option<mouse::TextSelection> = None;
     let draw_single = |terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
-                       emulator: &std::sync::Mutex<Emulator>|
+                       emulator: &std::sync::Mutex<Emulator>,
+                       selection: &Option<mouse::TextSelection>|
      -> io::Result<()> {
         terminal.draw(|frame| {
             // Release the emulator before Terminal::draw diffs and flushes
@@ -130,6 +125,9 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
                 .then(|| pane_view::cursor_position(screen))
                 .flatten();
             frame.render_widget(pane_view::TerminalScreen::new(screen, theme), frame.area());
+            if let Some(selection) = selection {
+                selection.highlight(frame.buffer_mut());
+            }
             if let Some((x, y)) = cursor {
                 frame.set_cursor_position(Position { x, y });
             }
@@ -137,7 +135,7 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
         Ok(())
     };
 
-    draw_single(&mut terminal, &emulator)?;
+    draw_single(&mut terminal, &emulator, &selection)?;
 
     let mut buf = [0u8; 4096];
     let mut dirty = false;
@@ -156,13 +154,17 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
             key = input_rx.recv() => {
                 match key {
                     Some(Event::Resize(cols, rows)) => {
+                        selection = None;
                         if let Err(error) = daemon_client::resize_pane(pane_id, cols.max(1), rows.max(1)).await {
                             break Err(error);
                         }
                         emulator.lock().unwrap().set_size(rows.max(1), cols.max(1));
                         dirty = true;
                     }
-                    Some(Event::Key(key)) => match keymap::translate(key, false) {
+                    Some(Event::Key(key)) => {
+                        selection = None;
+                        dirty = true;
+                        match keymap::translate(key, false) {
                         Some(Action::Bytes(bytes)) => {
                             emulator.lock().unwrap().scroll(isize::MIN);
                             if pipe_write.write_all(&bytes).await.is_err() {
@@ -179,10 +181,19 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
                         Some(Action::ScrollTop) => { emulator.lock().unwrap().scroll(isize::MAX); dirty=true; }
                         Some(Action::ScrollBottom) => { emulator.lock().unwrap().scroll(isize::MIN); dirty=true; }
                         _ => {},
-                    },
+                    }},
                     Some(Event::Mouse(event)) if matches!(event.kind, MouseEventKind::ScrollUp | MouseEventKind::ScrollDown) => {
+                        selection = None;
                         let bytes = emulator.lock().unwrap().wheel(event.kind == MouseEventKind::ScrollUp, event.column, event.row, event.modifiers.contains(crossterm::event::KeyModifiers::SHIFT));
                         if let Some(bytes) = bytes { pipe_write.write_all(&bytes).await?; }
+                        dirty = true;
+                    }
+                    Some(Event::Mouse(event)) => {
+                        if event.kind == MouseEventKind::Down(MouseButton::Left) {
+                            selection = mouse::TextSelection::start(terminal.size()?.into(), event);
+                        } else if let Some(selection) = &mut selection {
+                            selection.update(event);
+                        }
                         dirty = true;
                     }
                     Some(_) => {},
@@ -190,7 +201,7 @@ pub async fn view_pane(pane_id: u64) -> io::Result<()> {
                 }
             }
             _ = tokio::time::sleep_until(next_frame), if dirty => {
-                draw_single(&mut terminal, &emulator)?;
+                draw_single(&mut terminal, &emulator, &selection)?;
                 dirty = false;
                 next_frame = tokio::time::Instant::now() + std::time::Duration::from_millis(16);
             }
@@ -246,6 +257,7 @@ pub async fn run(name: String, default_shell: String) -> io::Result<()> {
                 let Some(event)=event else{break Ok(());};
                 match event {
                     Event::Resize(cols,rows)=>{
+                        state.selection=None;
                         terminal_area=ratatui::layout::Rect::new(0,0,cols,rows);
                         main_area=layout::shell(terminal_area,state.sidebar_visible).panes;
                         sync_layout(workspace.root.as_ref().unwrap(),main_area,&mut sessions,&mut last_sizes,redraw_tx.clone()).await?;
@@ -255,15 +267,23 @@ pub async fn run(name: String, default_shell: String) -> io::Result<()> {
                         let shell=layout::shell(terminal_area,state.sidebar_visible);
                         match event.kind {
                             MouseEventKind::Down(MouseButton::Left)=>{
+                                state.selection=None; dirty=true;
                                 if shell.sidebar.contains((event.column,event.row).into()) && (event.row==shell.sidebar.y || event.row==shell.sidebar.y+2) {
                                     state.sessions_expanded= !state.sessions_expanded; dirty=true;
                                 }else if let Some(id)=sidebar::clicked_session(shell.sidebar,&workspace,&state,event.column,event.row) {
                                     focused=Some(id); state.follow_focus=true; state.prefix=false; state.sidebar_focus=false; dirty=true;
                                 }else if mouse::focus_clicked_pane(event,workspace.root.as_ref().unwrap(),main_area,&mut focused) {
                                     state.follow_focus=true; state.prefix=false; state.sidebar_focus=false; dirty=true;
+                                    if let Some(pane)=layout::panes(workspace.root.as_ref().unwrap(),main_area).into_iter().find(|pane|Some(pane.pane)==focused) {
+                                        state.selection=mouse::TextSelection::start(layout::viewport(pane.rect),event);
+                                    }
                                 }
                             }
+                            MouseEventKind::Drag(MouseButton::Left) | MouseEventKind::Up(MouseButton::Left)=>{
+                                if let Some(selection)=&mut state.selection {selection.update(event);dirty=true;}
+                            }
                             MouseEventKind::ScrollUp | MouseEventKind::ScrollDown=>{
+                                state.selection=None; dirty=true;
                                 let up=event.kind==MouseEventKind::ScrollUp;
                                 if shell.sidebar.contains((event.column,event.row).into()) {
                                     state.sidebar_scroll=if up{state.sidebar_scroll.saturating_sub(3)}else{state.sidebar_scroll.saturating_add(3)};
@@ -282,6 +302,7 @@ pub async fn run(name: String, default_shell: String) -> io::Result<()> {
                         }
                     }
                     Event::Key(key)=>{
+                        state.selection=None;
                         if key.code == KeyCode::Char('q') && key.modifiers.contains(KeyModifiers::CONTROL) { break Ok(()); }
                         if let Some(overlay)=state.overlay {
                             match key.code {
